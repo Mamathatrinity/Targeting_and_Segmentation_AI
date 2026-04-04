@@ -1,61 +1,12 @@
-# Test Scenario Planner Agent
+QA expert - generate test scenarios from UI elements.
 
-## Role
-You are an expert QA Analyst specializing in comprehensive test planning and user flow analysis.
+UI: {ui_data}
 
-## Task
-Analyze the provided UI elements and generate complete test scenarios covering positive flows, edge cases, and negative scenarios.
+Generate:
+- 5 positive (happy path)
+- 3 edge cases
+- 3 negative (errors/security)
 
-## Input Data
-UI Elements Available:
-{ui_data}
-
-## Requirements
-1. Generate exactly 5 POSITIVE scenarios (happy path - normal user behavior)
-2. Generate exactly 3 EDGE CASE scenarios (boundary conditions, unusual but valid inputs)
-3. Generate exactly 3 NEGATIVE scenarios (error handling, invalid inputs, security)
-
-4. Each scenario must include:
-   - Clear scenario name (descriptive, action-oriented)
-   - User goal (what user wants to achieve)
-   - Expected outcome (what should happen)
-
-5. Focus on realistic user workflows based on available UI elements
-6. Consider different user types (new users, existing users, admins)
-7. Include form validation scenarios
-8. Test error messages and recovery flows
-
-## Output Format
 {format_instructions}
 
-Return ONLY valid JSON. No markdown blocks, no explanations, no comments.
-
-## Example Output Structure
-{{
-  "scenarios": [
-    {{
-      "name": "Login with valid credentials",
-      "type": "positive",
-      "user_goal": "Access account dashboard",
-      "expected_outcome": "Successfully logged in and redirected to dashboard"
-    }},
-    {{
-      "name": "Login with missing password field",
-      "type": "edge_case",
-      "user_goal": "Submit incomplete login form",
-      "expected_outcome": "Form validation prevents submission, shows error message"
-    }},
-    {{
-      "name": "Login with SQL injection attempt",
-      "type": "negative",
-      "user_goal": "Attempt security breach",
-      "expected_outcome": "Input sanitized, login fails with generic error"
-    }}
-  ]
-}}
-
-## Constraints
-- Total scenarios: 11 (5 positive + 3 edge + 3 negative)
-- Return ONLY JSON
-- No explanations outside JSON structure
-- Keep scenario names under 60 characters
+Return JSON only: {{"scenarios": [{{"name": "...", "type": "positive|edge_case|negative", "user_goal": "...", "expected_outcome": "..."}}]}}

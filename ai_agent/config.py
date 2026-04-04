@@ -25,10 +25,16 @@ class AIConfig:
     # Temperature Settings
     TEMPERATURE = 0  # Deterministic output
     
+    # Prompt Caching (reduces costs for repeated prompts)
+    ENABLE_PROMPT_CACHING = True  # Cache system prompts
+    CACHE_TTL_SECONDS = 300  # Cache validity: 5 minutes
+    
     # Workflow Safeguards
     MAX_TESTS = 20  # Maximum tests per run
-    MAX_ITERATIONS = 1  # Maximum feedback loop iterations (controlled retry)
+    MAX_ITERATIONS = 1  # Maximum feedback loop iterations (SAFE: only 1 retry allowed)
     TIMEOUT_MINUTES = 30  # Maximum execution time
+    ENABLE_LIFECYCLE_LOOP = False  # Enable safe lifecycle loop (max 1 retry)
+    ENABLE_LEARNING_LAYER = True  # Enable failure history tracking
     
     # Langfuse Settings (Optional - for observability)
     LANGFUSE_PUBLIC_KEY = os.getenv("LANGFUSE_PUBLIC_KEY", "")

@@ -18,6 +18,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'ai_agent'))
 from ai_agent.config import AIConfig
 from ai_agent.graph.workflow import run_workflow, run_multi_module_workflow
 from ai_agent.config_loader import get_config
+from ai_agent.cost_tracker import get_cost_tracker
 
 
 def setup_langfuse():
@@ -152,6 +153,9 @@ def main():
     print("="*60)
     print(f"Architecture: LangChain + LangGraph + Azure GPT-4o")
     
+    # Get cost tracker
+    cost_tracker = get_cost_tracker()
+    
     try:
         # Validate configuration
         AIConfig.validate()
@@ -203,6 +207,9 @@ def main():
         # Print summary
         print_summary(results)
         
+        # Print cost summary
+        cost_tracker.print_summary()
+        
         # Save results
         output_file = save_results(results, args.output)
         
@@ -222,8 +229,25 @@ def main():
             print("\n✓ All tests passed!")
             return 0
     
+    except KeyboardInterrupt:
+        print("\n\n⚠ Interrupted by user")
+        return 130
+    
+    except ValueError as e:
+        print(f"\n❌ Configuration Error: {e}")
+        print("   Check your .env file and config.yaml")
+        print("   Run: python -m ai_agent.health_check")
+        return 1
+    
+    except ConnectionError as e:
+        print(f"\n❌ Connection Error: {e}")
+        print("   Check your network and Azure endpoint")
+        return 1
+    
     except Exception as e:
-        print(f"\n❌ Error: {e}")
+        print(f"\n❌ Unexpected Error: {e}")
+        print("\nFor detailed diagnosis, run:")
+        print("  python -m ai_agent.health_check")
         import traceback
         traceback.print_exc()
         return 1
