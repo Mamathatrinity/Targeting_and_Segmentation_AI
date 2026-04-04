@@ -1,0 +1,78 @@
+# AI Testing Configuration
+# This file defines the test execution configuration
+
+app:
+  # Base URL of the application
+  base_url: "https://example.com"
+  
+  # API URL (optional - for API testing)
+  api_url: "https://api.example.com"
+  
+  # Data source (optional - for data validation)
+  data_source: "postgresql://user:password@localhost:5432/database"
+  
+  # Browser settings
+  headless: false
+  timeout: 30  # seconds
+
+# Test execution mode
+mode: "ui_only"  # Options: "ui_only", "full", "api_only", "data_only"
+
+# Modules to test (in order)
+modules:
+  - name: "login"
+    url: "/login"
+    description: "Test login functionality"
+    enabled: true
+    
+  - name: "dashboard"
+    url: "/dashboard"
+    description: "Test dashboard page"
+    enabled: true
+    depends_on: "login"  # Run after login
+    
+  - name: "settings"
+    url: "/settings"
+    description: "Test settings page"
+    enabled: false  # Can disable modules
+
+# AI Agent Settings
+agents:
+  planner:
+    max_tokens: 300
+    temperature: 0
+    
+  designer:
+    max_tokens: 500
+    temperature: 0
+    max_tests: 10  # Max tests per module
+    
+  validator:
+    max_tokens: 200
+    temperature: 0
+  
+  # New integrated agents
+  ui_automation:
+    max_actions: 20
+    timeout_minutes: 5
+  
+  api_testing:
+    timeout_seconds: 30
+    max_requests: 50
+  
+  data_validation:
+    timeout_minutes: 10
+    max_validations: 100
+
+# Execution Limits
+limits:
+  max_tests_total: 20
+  max_execution_time_minutes: 30
+  max_iterations: 1  # Feedback loop iterations
+  timeout_minutes: 30
+
+# Langfuse Settings (optional)
+observability:
+  langfuse_enabled: true
+  track_tokens: true
+  track_costs: true
