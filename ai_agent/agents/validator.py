@@ -31,10 +31,9 @@ class ValidatorAgent:
             max_tokens=AIConfig.MAX_TOKENS_VALIDATOR  # Small limit - just analysis
         )
         
-        # Load prompt template from file
-        prompt_file = os.path.join(os.path.dirname(__file__), "..", "prompts", "validator_prompt.txt")
-        with open(prompt_file, 'r') as f:
-            template = f.read()
+        # Load prompt template from cache (reuse for cost reduction)
+        from ai_agent.tools.prompt_cache import load_prompt
+        template = load_prompt("validator_prompt.txt")
         
         # Token-efficient prompt
         self.prompt = PromptTemplate(

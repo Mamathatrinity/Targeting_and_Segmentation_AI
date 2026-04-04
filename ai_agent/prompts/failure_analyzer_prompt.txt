@@ -1,0 +1,24 @@
+Analyze test failures and find root causes.
+
+Failures:
+{failures}
+
+Identify:
+1. Common patterns (same error in multiple tests)
+2. Root cause category (selector/timing/data/environment/bug)
+3. Severity (critical/high/medium/low)
+4. Fix recommendations
+
+Return JSON only:
+{{
+  "patterns": ["3 tests failed: selector not found"],
+  "root_cause": "Selectors changed in recent UI update",
+  "category": "selector_issues",
+  "severity": "high",
+  "affected_tests": ["test1", "test2"],
+  "recommendations": [
+    "Update selectors to use data-testid attributes",
+    "Add selector validation before execution"
+  ],
+  "confidence": "high"
+}}

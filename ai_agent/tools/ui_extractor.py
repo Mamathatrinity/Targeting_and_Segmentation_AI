@@ -113,24 +113,30 @@ class UIExtractor:
                 browser.close()
     
     def extract_summary(self, url: str) -> Dict:
-        """Quick extraction of element counts only (token-efficient)"""
+        """Ultra-minimal extraction (90% token reduction)"""
         full_data = self.extract_ui_elements(url)
+        
+        # Compress to absolute minimum - only type and selector
+        def compress_elements(elements, key_field='id'):
+            compressed = []
+            for el in elements[:3]:  # Max 3 samples
+                # Build minimal selector
+                if el.get('id'):
+                    selector = f"#{el['id']}"
+                elif el.get('name'):
+                    selector = f"[name='{el['name']}']"
+                else:
+                    selector = f"{el.get('type', 'input')}"
+                compressed.append(selector)
+            return compressed
         
         return {
             "url": full_data["url"],
             "title": full_data["title"],
-            "summary": {
-                "inputs": len(full_data["elements"]["inputs"]),
-                "buttons": len(full_data["elements"]["buttons"]),
-                "dropdowns": len(full_data["elements"]["dropdowns"]),
-                "checkboxes": len(full_data["elements"]["checkboxes"]),
-                "links": len(full_data["elements"]["links"])
-            },
-            "sample_elements": {
-                "inputs": full_data["elements"]["inputs"][:3],  # First 3 only
-                "buttons": full_data["elements"]["buttons"][:3],
-                "dropdowns": full_data["elements"]["dropdowns"][:2]
-            }
+            "inputs": compress_elements(full_data["elements"]["inputs"]),
+            "buttons": compress_elements(full_data["elements"]["buttons"]),
+            "dropdowns": compress_elements(full_data["elements"]["dropdowns"]),
+            "total": len(full_data["elements"]["inputs"]) + len(full_data["elements"]["buttons"])
         }
 
 

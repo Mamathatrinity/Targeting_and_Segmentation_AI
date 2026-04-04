@@ -1,0 +1,39 @@
+{
+  "has_failures": true,
+  "total_failures": 3,
+  "root_cause": "Selectors changed after recent deployment",
+  "category": "selector_issues",
+  "severity": "high",
+  "patterns": [
+    "3 tests failed with 'element not found'",
+    "All failures on submit buttons",
+    "Pattern detected: ID selectors no longer valid"
+  ],
+  "affected_tests": [
+    "Login test",
+    "Signup test",
+    "Checkout test"
+  ],
+  "recommendations": [
+    "Update button selectors from '#submit' to 'button[type=submit]'",
+    "Implement data-testid attributes: data-testid='submit-button'",
+    "Add pre-test selector validation",
+    "Use Playwright's getByRole() for better stability",
+    "Create selector mapping file for easier maintenance"
+  ],
+  "confidence": "high",
+  "impact_analysis": {
+    "critical_flows_affected": [
+      "User authentication",
+      "User registration",
+      "Payment processing"
+    ],
+    "estimated_fix_time": "30 minutes",
+    "priority": "P1 - Critical"
+  },
+  "historical_context": {
+    "similar_failures_last_30_days": 5,
+    "most_common_error": "element_not_found",
+    "recommendation": "Consider implementing visual regression testing"
+  }
+}

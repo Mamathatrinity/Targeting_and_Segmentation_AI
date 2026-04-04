@@ -43,10 +43,9 @@ class PlannerAgent:
         # Output parser for structured JSON
         self.parser = PydanticOutputParser(pydantic_object=TestScenarios)
         
-        # Load prompt template from file
-        prompt_file = os.path.join(os.path.dirname(__file__), "..", "prompts", "planner_prompt.txt")
-        with open(prompt_file, 'r') as f:
-            template = f.read()
+        # Load prompt template from cache (reuse for cost reduction)
+        from ai_agent.tools.prompt_cache import load_prompt
+        template = load_prompt("planner_prompt.txt")
         
         # Token-efficient prompt template
         self.prompt = PromptTemplate(

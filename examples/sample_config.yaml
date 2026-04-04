@@ -1,0 +1,112 @@
+# Sample Configuration File
+# This is a template showing all available options
+
+# Application settings
+app:
+  # Base URL of your application
+  base_url: "https://myapp.com"
+  
+  # Optional: API endpoint for API testing
+  api_url: "https://api.myapp.com"
+  
+  # Optional: Database connection for data validation
+  data_source: "postgresql://user:password@localhost:5432/mydb"
+  
+  # Browser settings
+  headless: true  # Run browser in headless mode
+  timeout: 30     # Default timeout in seconds
+
+# Test execution mode
+mode: "ui_only"  # Options: "ui_only", "full", "api_only", "data_only"
+
+# Modules to test (executed in order)
+modules:
+  # Module 1: Login page
+  - name: "login"
+    url: "/login"
+    description: "Test user authentication flow"
+    enabled: true
+    tags: ["critical", "authentication"]
+  
+  # Module 2: Dashboard (depends on login)
+  - name: "dashboard"
+    url: "/dashboard"
+    description: "Test main dashboard functionality"
+    enabled: true
+    depends_on: "login"
+    tags: ["critical", "main-flow"]
+  
+  # Module 3: User profile
+  - name: "profile"
+    url: "/profile"
+    description: "Test user profile page"
+    enabled: true
+    tags: ["user-management"]
+  
+  # Module 4: Settings (optional - disabled)
+  - name: "settings"
+    url: "/settings"
+    description: "Test settings page"
+    enabled: false  # Disabled module - won't run
+    tags: ["admin"]
+  
+  # Module 5: Checkout flow
+  - name: "checkout"
+    url: "/checkout"
+    description: "Test payment and checkout"
+    enabled: true
+    tags: ["critical", "payment"]
+
+# AI Agent Settings
+agents:
+  planner:
+    max_tokens: 300
+    temperature: 0
+    
+  designer:
+    max_tokens: 500
+    temperature: 0
+    max_tests: 10  # Max tests per module
+    
+  validator:
+    max_tokens: 200
+    temperature: 0
+  
+  # New integrated agents
+  ui_automation:
+    max_actions: 20
+    timeout_minutes: 5
+  
+  api_testing:
+    timeout_seconds: 30
+    max_requests: 50
+  
+  data_validation:
+    timeout_minutes: 10
+    max_validations: 100
+
+# Execution Limits (Safety)
+limits:
+  max_tests_total: 50           # Maximum total tests
+  max_execution_time_minutes: 30  # Overall timeout
+  max_iterations: 1              # Lifecycle loop limit (safe)
+
+# Features (Enable/Disable)
+features:
+  enable_lifecycle_loop: false   # Safe 1-retry loop
+  enable_learning_layer: true    # Failure history tracking
+  enable_cost_tracking: true     # Token usage tracking
+  enable_failure_analysis: true  # AI-powered root cause analysis
+
+# Langfuse Observability (Optional)
+observability:
+  enabled: true
+  capture_screenshots: true      # Capture on failures
+  log_level: "info"              # debug, info, warning, error
+
+# Notifications (Optional - Future feature)
+notifications:
+  enabled: false
+  email: "team@example.com"
+  slack_webhook: ""
+  on_failure_only: true

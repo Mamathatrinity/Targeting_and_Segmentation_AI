@@ -1,0 +1,84 @@
+{
+  "url": "https://example.com",
+  "timestamp": "2026-04-04T10:30:00",
+  "execution_results": {
+    "summary": {
+      "total_tests": 10,
+      "passed": 8,
+      "failed": 2,
+      "pass_rate": "80.0%",
+      "total_duration_ms": 45230
+    },
+    "test_results": [
+      {
+        "test_number": 1,
+        "name": "Login with valid credentials",
+        "status": "passed",
+        "steps_executed": 5,
+        "steps_total": 5
+      },
+      {
+        "test_number": 2,
+        "name": "Login with invalid password",
+        "status": "failed",
+        "steps_executed": 4,
+        "steps_total": 5,
+        "failure_reason": "Selector 'button#submit' not found",
+        "failed_step": 4,
+        "error_type": "element_not_found"
+      }
+    ],
+    "failure_groups": [
+      {
+        "error_type": "element_not_found",
+        "count": 2,
+        "recommendation": "Update selectors to use data-testid attributes",
+        "failed_tests": [
+          {
+            "test_name": "Login with invalid password",
+            "test_number": 2,
+            "failure_reason": "Selector 'button#submit' not found"
+          },
+          {
+            "test_name": "Signup form validation",
+            "test_number": 5,
+            "failure_reason": "Selector 'button#register' not found"
+          }
+        ]
+      }
+    ]
+  },
+  "validation_analysis": {
+    "status": "failures_detected",
+    "failure_count": 2,
+    "root_causes": [
+      "Selector not found - element may have changed",
+      "UI structure modified in recent update"
+    ],
+    "recommendations": [
+      "Update selectors to 'button[type=submit]'",
+      "Use data-testid attributes for stability"
+    ],
+    "confidence": "high"
+  },
+  "failure_analysis": {
+    "has_failures": true,
+    "total_failures": 2,
+    "root_cause": "Selectors changed in recent UI update",
+    "category": "selector_issues",
+    "severity": "high",
+    "patterns": [
+      "Multiple tests failing with 'element not found' error"
+    ],
+    "affected_tests": [
+      "Login with invalid password",
+      "Signup form validation"
+    ],
+    "recommendations": [
+      "Update all button selectors to use data-testid='submit-btn'",
+      "Add selector validation step before test execution",
+      "Consider using more stable locator strategies"
+    ],
+    "confidence": "high"
+  }
+}
