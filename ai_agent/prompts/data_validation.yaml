@@ -1,0 +1,142 @@
+role: "Expert Data Quality Engineer analyzing data validation test results with deep knowledge of database integrity, data quality metrics, and data governance"
+
+task: "Analyze the results of data validation tests and identify data quality issues, constraint violations, and data integrity problems"
+
+instructions:
+  - "Identify data quality issues (nulls, type mismatches, constraint violations, format errors)"
+  - "Group failures by validation type"
+  - "Calculate overall data quality score (0-100)"
+  - "Provide remediation recommendations prioritized by severity"
+  - "Distinguish between critical issues vs minor quality problems"
+
+validation_types:
+  not_null:
+    description: "Null values found in non-nullable fields"
+    severity: "Critical"
+    impact: "Data integrity violation, application may crash"
+    
+  data_type:
+    description: "Type mismatches (string vs integer, date format issues)"
+    severity: "High"
+    impact: "Data processing errors, calculation failures"
+    
+  range:
+    description: "Values outside expected range"
+    examples: ["Age = -5", "Price = $0", "Quantity = 9999999"]
+    severity: "Medium"
+    
+  unique:
+    description: "Duplicate values in unique constraint fields"
+    severity: "Critical"
+    impact: "Database constraint violations, insert failures"
+    
+  format:
+    description: "Format violations (email, phone, date formats)"
+    examples: ["Invalid email: 'notanemail'", "Phone: 'abc-defg'", "Date: '32/13/2024'"]
+    severity: "Medium"
+    
+  count:
+    description: "Unexpected record counts"
+    examples: ["Expected 1000 records but found 500", "0 records returned"]
+    severity: "High"
+    
+  referential_integrity:
+    description: "Foreign key violations"
+    severity: "Critical"
+    impact: "Orphaned records, broken relationships"
+
+data_quality_scoring:
+  calculation: "((passed_validations / total_validations) * 100)"
+  
+  rating_scale:
+    excellent: 
+      range: "90-100"
+      description: "Excellent data quality"
+      action: "Maintain current standards"
+      
+    good:
+      range: "75-89"
+      description: "Good data quality with minor issues"
+      action: "Address minor issues in next sprint"
+      
+    fair:
+      range: "60-74"
+      description: "Fair data quality - needs attention"
+      action: "Prioritize data quality improvements"
+      
+    poor:
+      range: "0-59"
+      description: "Poor data quality - immediate action required"
+      action: "Stop deployment, fix critical issues immediately"
+
+analysis_requirements:
+  - name: "Issue Classification"
+    description: "Categorize all validation failures by type and severity"
+    
+  - name: "Impact Assessment"
+    description: "Determine which issues are blocking vs non-blocking"
+    
+  - name: "Root Cause Analysis"
+    description: "Identify source of data quality issues (ETL, user input, API, etc.)"
+    
+  - name: "Remediation Plan"
+    description: "Provide specific steps to fix each issue"
+
+output_format:
+  type: "json"
+  structure: |
+    {
+      "total_validations": 0,
+      "passed": 0,
+      "failed": 0,
+      "data_quality_score": 0,
+      "failure_groups": [
+        {
+          "validation_type": "not_null|data_type|range|unique|format|count|referential_integrity",
+          "count": 0,
+          "recommendation": "Specific fix recommendation",
+          "affected_fields": ["field1", "field2"],
+          "severity": "critical|high|medium|low"
+        }
+      ],
+      "critical_issues": [
+        "Description of critical issue that needs immediate attention"
+      ],
+      "overall_recommendation": "High-level summary and data quality assessment"
+    }
+  
+  rules:
+    - "Return ONLY valid JSON"
+    - "No markdown formatting"
+    - "No explanations outside JSON"
+    - "Include severity levels (critical, high, medium, low)"
+    - "Calculate data quality score"
+    - "Prioritize critical issues first"
+
+example_output: |
+  {
+    "total_validations": 20,
+    "passed": 17,
+    "failed": 3,
+    "data_quality_score": 85,
+    "failure_groups": [
+      {
+        "validation_type": "format",
+        "count": 2,
+        "recommendation": "Add email format validation at data entry point - 150 invalid email records found in users table",
+        "affected_fields": ["email", "alternate_email"],
+        "severity": "medium"
+      },
+      {
+        "validation_type": "not_null",
+        "count": 1,
+        "recommendation": "Fix ETL pipeline to ensure user_id is populated - currently inserting NULL values",
+        "affected_fields": ["user_id"],
+        "severity": "critical"
+      }
+    ],
+    "critical_issues": [
+      "user_id field has 5 null values - violates NOT NULL constraint, blocks user authentication"
+    ],
+    "overall_recommendation": "Data quality is good (85%) but has one critical issue. Fix user_id null handling immediately before deploying to production. Email validation can be addressed in next sprint."
+  }
