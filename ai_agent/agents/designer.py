@@ -14,6 +14,9 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from config import AIConfig
 from langfuse_tracker import get_tracker
+from ai_agent.utils.cache import get_cached_response, set_cached_response
+from ai_agent.utils.prompt_loader import load_prompt
+from ai_agent.utils.prompt_formatter import format_prompt
 
 
 class TestStep(BaseModel):
@@ -48,15 +51,8 @@ class DesignerAgent:
             max_tokens=AIConfig.MAX_TOKENS_DESIGNER
         )
         
-        # Load prompt template from cache (reuse for cost reduction)
-        from ai_agent.tools.prompt_cache import load_prompt
-        template = load_prompt("designer_prompt.txt")
-        
-        # Token-efficient prompt
-        self.prompt = PromptTemplate(
-            input_variables=["scenarios", "ui_elements"],
-            template=template
-        )
+        # Load YAML prompt template
+        self.prompt_data = load_prompt("ai_agent/prompts/designer.yaml")
     
     def design_tests(self, scenarios: dict, ui_data: dict, max_tests: int = None) -> List[dict]:
         """
@@ -80,29 +76,39 @@ class DesignerAgent:
         # Get Langfuse tracker
         tracker = get_tracker()
         
-        # Format prompt
-        formatted_prompt = self.prompt.format(
+        # Format YAML prompt with variables
+        formatted_prompt = format_prompt(
+            self.prompt_data,
             scenarios=scenarios_text,
-            ui_elements=ui_elements_text,
-            max_tests=max_tests
+            ui_elements=ui_elements_text
         )
         
-        # Call LLM with Langfuse tracking
-        response = self.llm.invoke(formatted_prompt)
+        # Check cache first (50-70% cost savings)
+        cache_key = f"{scenarios_text}_{ui_elements_text}"
+        cached_response = get_cached_response(formatted_prompt, cache_key)
+        if cached_response:
+            response_content = cached_response
+        else:
+            # Call LLM with Langfuse tracking
+            response = self.llm.invoke(formatted_prompt)
+            response_content = response.content
+            
+            # Cache the response
+            set_cached_response(formatted_prompt, cache_key, response_content)
         
         # Track with Langfuse
         tracker.generation(
             name="designer_agent",
             model=AIConfig.AZURE_OPENAI_DEPLOYMENT,
             prompt=formatted_prompt,
-            completion=response.content,
-            metadata={"max_tests": max_tests, "stage": "test_design"}
+            completion=response_content,
+            metadata={"max_tests": max_tests, "stage": "test_design", "cached": cached_response is not None}
         )
         
         # Parse JSON response
         try:
             # Remove markdown code blocks if present
-            content = response.content.strip()
+            content = response_content.strip()
             if content.startswith("```"):
                 content = content.split("```")[1]
                 if content.startswith("json"):
@@ -122,7 +128,7 @@ class DesignerAgent:
             return test_cases
         except json.JSONDecodeError as e:
             print(f"Failed to parse JSON: {e}")
-            print(f"Response: {response.content}")
+            print(f"Response: {response_content}")
             raise
     
     def _format_scenarios(self, scenarios: dict) -> str:

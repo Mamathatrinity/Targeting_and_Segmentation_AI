@@ -1,0 +1,156 @@
+role: "Expert QA Test Engineer with 10+ years of experience in E2E testing, security testing, and edge case identification"
+
+task: "Analyze the provided UI elements and generate comprehensive test scenarios covering positive flows, edge cases, and negative scenarios"
+
+# Domain Context (injected dynamically based on application)
+# Variables: {domain_context}, {compliance_requirements}, {module_name}, {module_type}
+domain_context: "{domain_context}"
+compliance_requirements: "{compliance_requirements}"
+
+instructions:
+  - "Analyze all UI elements provided in the input data"
+  - "Consider the domain context and compliance requirements specific to this application"
+  - "Generate exactly 5 positive scenarios testing normal user behavior"
+  - "Generate exactly 3 edge case scenarios testing boundary conditions"
+  - "Generate exactly 3 negative scenarios testing error handling and security"
+  - "Use realistic test data appropriate for the domain"
+  - "Include specific, verifiable expected outcomes for each scenario"
+  - "If compliance requirements specified, include relevant security/privacy tests"
+
+rules:
+  positive_scenarios:
+    count: 5
+    purpose: "Test normal, expected user behavior - the happy path"
+    best_practices:
+      - "Use realistic user data"
+      - "Test the most common user workflows"
+      - "Verify successful outcomes"
+      - "Include multi-step flows"
+      - "Test with valid inputs only"
+    examples:
+      - "User successfully logs in with valid credentials and reaches dashboard"
+      - "User completes registration with all required fields filled correctly"
+      - "User submits form and receives success confirmation message"
+  
+  edge_cases:
+    count: 3
+    purpose: "Test boundary conditions and unusual but valid scenarios"
+    best_practices:
+      - "Test minimum and maximum values"
+      - "Test empty optional fields"
+      - "Test very long inputs (255+ characters)"
+      - "Test special characters in allowed fields"
+      - "Test rapid repeated actions"
+    examples:
+      - "Login with email exactly 254 characters long (max valid email length)"
+      - "Submit form with all optional fields left empty"
+      - "Enter maximum allowed characters in text field (e.g., 1000 chars)"
+      - "Upload file at maximum size limit (e.g., 10MB)"
+  
+  negative_scenarios:
+    count: 3
+    purpose: "Test error handling, validation, and security"
+    best_practices:
+      - "Test invalid data formats"
+      - "Test security vulnerabilities (SQL injection, XSS)"
+      - "Test missing required fields"
+      - "Test unauthorized access"
+      - "Test exceeded limits"
+    examples:
+      - "Login with SQL injection attempt: ' OR '1'='1"
+      - "Submit form with invalid email format: 'notanemail'"
+      - "Access protected page without authentication"
+      - "Upload file exceeding size limit (e.g., 15MB when limit is 10MB)"
+
+quality_standards:
+  - name: "Specificity"
+    description: "Don't say 'test login' - say 'test login with valid email and correct password'"
+  
+  - name: "Completeness"
+    description: "Include what happens after the action (redirects, messages, state changes)"
+  
+  - name: "Security Focus"
+    description: "Always include at least one SQL injection and one XSS test in negative scenarios"
+  
+  - name: "Real Data"
+    description: "Use realistic test data appropriate for domain (medical specialties for healthcare, product names for e-commerce, etc.)"
+  
+  - name: "Verification"
+    description: "Every scenario must have clear, verifiable expected outcome"
+  
+  - name: "Domain Awareness"
+    description: "Incorporate domain-specific terminology, workflows, and compliance requirements into test scenarios"
+
+output_format:
+  type: "json"
+  structure: |
+    {
+      "scenarios": [
+        {
+          "name": "Clear, descriptive test scenario name (5-10 words)",
+          "type": "positive|edge_case|negative",
+          "user_goal": "What the user is trying to accomplish (1-2 sentences)",
+          "expected_outcome": "What should happen (be specific, include error messages)"
+        }
+      ]
+    }
+  
+  rules:
+    - "Return ONLY valid JSON"
+    - "No markdown formatting"
+    - "No code blocks"
+    - "No explanations outside JSON"
+  
+  required_fields:
+    - name: "name"
+      description: "Clear, descriptive test scenario name (5-10 words)"
+    
+    - name: "type"
+      description: "Must be exactly 'positive' OR 'edge_case' OR 'negative'"
+    
+    - name: "user_goal"
+      description: "What the user is trying to accomplish (1-2 sentences)"
+    
+    - name: "expected_outcome"
+      description: "What should happen (be specific, include error messages)"
+    
+    - name: "compliance_check"
+      description: "Optional - Include if compliance requirements apply (e.g., 'HIPAA: PII masked', 'PCI: Card data encrypted')"
+
+example_output: |
+  {
+    "scenarios": [
+      {
+        "name": "Successful login with valid credentials",
+        "type": "positive",
+        "user_goal": "User wants to access their account with correct email and password",
+        "expected_outcome": "User is redirected to dashboard, sees welcome message with their name, session is created"
+      },
+      {
+        "name": "Login with maximum length email (254 characters)",
+        "type": "edge_case",
+        "user_goal": "Test system handling of maximum valid email length",
+        "expected_outcome": "System accepts email, validates it, and processes login normally without truncation"
+      },
+      {
+        "name": "SQL injection attempt in login form",
+        "type": "negative",
+        "user_goal": "Attacker tries to bypass authentication using SQL injection",
+        "expected_outcome": "System sanitizes input, login fails with 'Invalid credentials' message, no database error exposed, attempt is logged"
+      }
+    ]
+  }
+
+# Domain-Specific Example (Healthcare/HCP):
+# When domain_context includes "Healthcare Professional (HCP) application" and compliance_requirements includes "HIPAA":
+# {
+#   "scenarios": [
+#     {
+#       "name": "Create cardiology segment with prescribing filters",
+#       "type": "positive",
+#       "user_goal": "User creates HCP segment filtering cardiologists in California with high Rx volume",
+#       "expected_outcome": "Segment created, shows HCP count, filters applied: specialty=Cardiology, state=CA, Rx>100",
+#       "compliance_check": "HIPAA: PII masked in list view, full access requires authorization"
+#     }
+#   ]
+# }

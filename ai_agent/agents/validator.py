@@ -12,6 +12,9 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from config import AIConfig
 from langfuse_tracker import get_tracker
+from ai_agent.utils.cache import get_cached_response, set_cached_response
+from ai_agent.utils.prompt_loader import load_prompt
+from ai_agent.utils.prompt_formatter import format_prompt
 
 
 class ValidatorAgent:
@@ -31,15 +34,8 @@ class ValidatorAgent:
             max_tokens=AIConfig.MAX_TOKENS_VALIDATOR  # Small limit - just analysis
         )
         
-        # Load prompt template from cache (reuse for cost reduction)
-        from ai_agent.tools.prompt_cache import load_prompt
-        template = load_prompt("validator_prompt.txt")
-        
-        # Token-efficient prompt
-        self.prompt = PromptTemplate(
-            input_variables=["results_summary"],
-            template=template
-        )
+        # Load YAML prompt template
+        self.prompt_data = load_prompt("ai_agent/prompts/validator.yaml")
     
     def validate_results(self, execution_results: Dict) -> Dict:
         """
@@ -57,29 +53,43 @@ class ValidatorAgent:
         # Prepare compact summary for analysis
         summary = self._prepare_summary(execution_results)
         
-        # Format prompt
-        formatted_prompt = self.prompt.format(results_summary=json.dumps(summary, indent=2))
+        # Format YAML prompt with variables
+        formatted_prompt = format_prompt(
+            self.prompt_data,
+            results_summary=json.dumps(summary, indent=2)
+        )
         
-        # Call LLM with Langfuse tracking
-        response = self.llm.invoke(formatted_prompt)
+        # Check cache first (50-70% cost savings)
+        cache_key = json.dumps(summary)
+        cached_response = get_cached_response(formatted_prompt, cache_key)
+        if cached_response:
+            response_content = cached_response
+        else:
+            # Call LLM with Langfuse tracking
+            response = self.llm.invoke(formatted_prompt)
+            response_content = response.content
+            
+            # Cache the response
+            set_cached_response(formatted_prompt, cache_key, response_content)
         
         # Track with Langfuse
         tracker.generation(
             name="validator_agent",
             model=AIConfig.AZURE_OPENAI_DEPLOYMENT,
             prompt=formatted_prompt,
-            completion=response.content,
+            completion=response_content,
             metadata={
                 "total_tests": summary.get("total_tests", 0),
                 "failed": summary.get("failed", 0),
-                "stage": "result_validation"
+                "stage": "result_validation",
+                "cached": cached_response is not None
             }
         )
         
         # Parse response
         try:
             # Remove markdown if present
-            content = response.content.strip()
+            content = response_content.strip()
             if content.startswith("```"):
                 content = content.split("```")[1]
                 if content.startswith("json"):

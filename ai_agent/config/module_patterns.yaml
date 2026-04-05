@@ -1,0 +1,276 @@
+# Module Patterns Configuration for HCP Application
+
+# This file defines module-specific test patterns
+# Used as {module_patterns} variable in prompts
+
+module_patterns:
+  
+  authentication:
+    type: "security_critical"
+    common_workflows:
+      - "Login with Azure AD SSO credentials"
+      - "Multi-factor authentication flow"
+      - "Session token validation and refresh"
+      - "Logout and session cleanup"
+      - "Password reset via email"
+    key_validations:
+      - "Bearer token in Authorization header"
+      - "Session cookie persistence"
+      - "Redirect to original page after login"
+      - "Account lockout after failed attempts"
+    security_tests:
+      - "Brute force protection (max 5 attempts)"
+      - "SQL injection in login fields"
+      - "XSS attempts in username/password"
+      - "Session hijacking prevention"
+      - "CSRF token validation"
+    edge_cases:
+      - "Login with expired Azure AD token"
+      - "Login from multiple devices simultaneously"
+      - "Network timeout during SSO redirect"
+    typical_selectors:
+      - "#email, #username, [name='email']"
+      - "#password, [type='password']"
+      - "#login-btn, button[type='submit']"
+      - ".error-message, .alert-danger"
+
+  universe_summary:
+    type: "dashboard"
+    common_workflows:
+      - "Load dashboard with HCP universe statistics"
+      - "Filter universe by specialty, geography, Rx volume"
+      - "View KPI cards (total HCPs, segments, active campaigns)"
+      - "Interact with charts (pie, bar, line graphs)"
+      - "Drill down from summary to detail view"
+    key_validations:
+      - "HCP count matches database query"
+      - "Geographic distribution chart accuracy"
+      - "Specialty breakdown percentages"
+      - "Dashboard loads within 3 seconds"
+      - "Data refresh on filter change"
+    api_endpoints:
+      - "GET /api/v1/hcp-universe (universe statistics)"
+      - "GET /api/v1/analytics (KPI metrics)"
+    edge_cases:
+      - "Load dashboard with 1M+ HCP records"
+      - "Apply all available filters simultaneously"
+      - "Empty universe (0 HCPs in test environment)"
+    typical_selectors:
+      - ".kpi-card, .stat-widget"
+      - "#specialty-filter, #geography-filter"
+      - ".chart-container, canvas"
+      - ".hcp-count, .total-segments"
+
+  segments_list:
+    type: "crud_list"
+    common_workflows:
+      - "View list of all user segments"
+      - "Create new segment with name, universe, cohort"
+      - "Search/filter segments by name or creator"
+      - "Sort segments by date, name, HCP count"
+      - "Delete segment (with confirmation)"
+      - "Duplicate existing segment"
+      - "Navigate to segment detail page"
+    key_validations:
+      - "Segment list matches database records"
+      - "Created_by shows correct username"
+      - "HCP count displayed for each segment"
+      - "Sort order persists after page refresh"
+      - "Only user's segments shown (privacy)"
+    api_endpoints:
+      - "GET /api/v1/segments (list all)"
+      - "POST /api/v1/segments (create new)"
+      - "DELETE /api/v1/segments/{id}"
+    security_tests:
+      - "User A cannot see User B's private segments"
+      - "SQL injection in segment name field"
+      - "XSS in segment description"
+    edge_cases:
+      - "Segment name with 255 characters (max length)"
+      - "Create segment with duplicate name (should fail)"
+      - "Delete segment in use by active target list"
+    typical_selectors:
+      - "#create-segment-btn, .new-segment"
+      - "input[name='segmentName']"
+      - ".segment-row, tr.segment-item"
+      - ".delete-btn, .duplicate-btn"
+
+  segment_detail:
+    type: "complex_detail"
+    common_workflows:
+      - "View segment detail with HCP list"
+      - "Apply filters (specialty, geography, Rx patterns)"
+      - "Combine filters with AND/OR logic"
+      - "Sort HCP table by columns"
+      - "Paginate through HCP results"
+      - "Export segment to CSV/Excel"
+      - "Edit segment name or filters"
+    key_validations:
+      - "HCP count matches applied filters"
+      - "Filter logic executed correctly (AND vs OR)"
+      - "Pagination shows correct page numbers"
+      - "Export file contains all HCPs in segment"
+      - "Sort maintains filter state"
+    api_endpoints:
+      - "GET /api/v1/segments/{id} (segment details)"
+      - "PUT /api/v1/segments/{id} (update filters)"
+      - "GET /api/v1/segments/{id}/hcps (HCP list)"
+      - "POST /api/v1/segments/{id}/export"
+    security_tests:
+      - "PII fields masked appropriately"
+      - "Export requires proper permissions"
+      - "Cannot access another user's segment"
+    edge_cases:
+      - "Apply 15+ filter criteria (max complexity)"
+      - "Filter combination returns 0 HCPs"
+      - "Export segment with 100K+ HCPs"
+      - "Edit segment while export is processing"
+    typical_selectors:
+      - ".filter-panel, #add-filter-btn"
+      - "select[name='specialty'], select[name='state']"
+      - ".hcp-table, table.data-grid"
+      - ".export-csv, .export-excel"
+      - ".pagination, .page-numbers"
+
+  target_list:
+    type: "crud_list"
+    common_workflows:
+      - "View all target lists for campaigns"
+      - "Create target from existing segment"
+      - "Create empty target and add HCPs manually"
+      - "Rename target list"
+      - "Delete target list"
+      - "View target statistics (HCP count, campaign status)"
+    key_validations:
+      - "Target list shows correct HCP count"
+      - "Campaign association displayed"
+      - "Created date and modified date accurate"
+      - "User can only modify own targets"
+    api_endpoints:
+      - "GET /api/v1/targets (list all)"
+      - "POST /api/v1/targets (create new)"
+      - "PUT /api/v1/targets/{id} (rename)"
+      - "DELETE /api/v1/targets/{id}"
+    edge_cases:
+      - "Create target from segment with 0 HCPs"
+      - "Target name with special characters"
+      - "Delete target associated with active campaign"
+    typical_selectors:
+      - "#create-target-btn"
+      - "input[name='targetName']"
+      - ".target-row, tr.target-item"
+      - ".hcp-count-badge"
+
+  target_list_detail:
+    type: "complex_detail"
+    common_workflows:
+      - "View HCPs assigned to target"
+      - "Add individual HCPs manually"
+      - "Remove HCPs from target"
+      - "Bulk import HCPs via CSV upload"
+      - "Export target list to file"
+      - "View campaign metadata"
+    key_validations:
+      - "No duplicate HCPs in target"
+      - "HCP NPI numbers formatted correctly"
+      - "CSV import validates HCP identifiers"
+      - "Export includes campaign ID"
+      - "Removal updates HCP count immediately"
+    api_endpoints:
+      - "GET /api/v1/targets/{id} (target details)"
+      - "POST /api/v1/targets/{id}/hcps (add HCPs)"
+      - "DELETE /api/v1/targets/{id}/hcps/{hcpId}"
+      - "POST /api/v1/targets/{id}/import"
+      - "GET /api/v1/targets/{id}/export"
+    security_tests:
+      - "Verify HCP PII protection"
+      - "Prevent duplicate HCP assignments"
+      - "Import validates file format and HCP IDs"
+    edge_cases:
+      - "Add 50K+ HCPs to single target"
+      - "Upload CSV with malformed NPI numbers"
+      - "Remove last HCP from target (empty target)"
+    typical_selectors:
+      - ".add-hcp-btn, #import-csv-btn"
+      - "input[type='file']"
+      - ".hcp-table, .target-hcps"
+      - ".remove-hcp-btn"
+      - ".export-target-btn"
+
+# Common patterns across ALL modules
+common_patterns:
+  form_validation:
+    - "Submit form with empty required fields"
+    - "Submit form with max length exceeded"
+    - "Submit form with special characters"
+    - "Submit form with SQL injection attempt"
+    - "Submit form with XSS payload"
+  
+  data_table_interactions:
+    - "Sort by each column (asc/desc)"
+    - "Paginate through all pages"
+    - "Search/filter table data"
+    - "Select all rows"
+    - "Export table to CSV/Excel"
+  
+  error_handling:
+    - "Network timeout simulation"
+    - "API returns 500 error"
+    - "API returns 404 not found"
+    - "API returns 401 unauthorized"
+    - "Concurrent user conflict (409)"
+  
+  performance:
+    - "Page load time under 3 seconds"
+    - "API response time under 1 second"
+    - "Large dataset handling (100K+ records)"
+    - "Concurrent user actions"
+
+# HCP-specific data patterns
+test_data_patterns:
+  specialties:
+    valid: ["Cardiology", "Oncology", "Endocrinology", "Neurology", "Family Medicine", "Internal Medicine", "Pediatrics", "Dermatology", "Orthopedics", "Gastroenterology"]
+    invalid: ["Alchemy", "Wizardry", "'; DROP TABLE--", "<script>alert('XSS')</script>"]
+  
+  states:
+    valid: ["California", "New York", "Texas", "Florida", "Illinois"]
+    edge: ["All 50 states selected", "No state selected", "International (Canada)"]
+  
+  hcp_counts:
+    realistic: [10, 50, 247, 1532, 10457, 50000, 100000]
+    edge: [0, 1, 999999]
+  
+  segment_names:
+    valid: ["Top CA Cardiologists Q1 2026", "High Rx Volume Oncologists", "Primary Care Midwest"]
+    max_length: "X" * 255
+    invalid: ["'; DELETE FROM segments--", "<script>alert('XSS')</script>", "", "   "]
+
+# Validation layer rules
+validation_layers:
+  ui_only:
+    use_when: "Visual testing, button clicks, form interactions without backend verification"
+    examples: ["Button changes color on hover", "Dropdown opens on click", "Modal displays correctly"]
+  
+  api_only:
+    use_when: "Testing API endpoints directly without UI interaction"
+    examples: ["GET /segments returns 200", "POST with invalid data returns 400", "Response schema validation"]
+  
+  db_only:
+    use_when: "Data integrity checks, referential integrity, database constraints"
+    examples: ["Segment name is unique", "Foreign key constraints", "Created_at timestamp set correctly"]
+  
+  ui_api:
+    use_when: "E2E flow verification - UI action triggers API call"
+    examples: ["Create segment via UI, verify API POST called", "Login via UI, verify bearer token in API"]
+  
+  ui_db:
+    use_when: "UI action with direct database verification"
+    examples: ["Create segment via UI, verify record in DB", "Delete segment, verify cascade delete"]
+  
+  api_db:
+    use_when: "API testing with database state verification"
+    examples: ["POST /segments creates DB record", "DELETE /segments removes DB record"]
+  
+  ui_api_db:
+    use_when: "Complete E2E validation across all layers (RECOMMENDED for critical flows)"
+    examples: ["Create segment: UI form → API POST → DB insert", "Login: UI form → API auth → Session in DB"]

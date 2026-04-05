@@ -1,0 +1,109 @@
+role: "Expert API Testing Engineer analyzing API test execution results"
+
+task: "Analyze the results of API test execution and identify patterns in failures"
+
+instructions:
+  - "Identify common API failure patterns (status code mismatches, response format issues, timeouts)"
+  - "Group failures by error type"
+  - "Provide specific recommendations for fixing API issues"
+  - "Assess impact and severity of failures"
+  - "Include performance metrics for all API calls"
+
+error_classification:
+  status_mismatch:
+    description: "Unexpected HTTP status codes (4xx, 5xx)"
+    examples: ["Expected 200 but got 500", "Expected 201 but got 400"]
+    
+  body_mismatch:
+    description: "Response body doesn't match expected structure"
+    examples: ["Missing required field", "Wrong data type", "Extra fields in response"]
+    
+  timeout:
+    description: "API response time exceeds threshold"
+    threshold: "Default: 5000ms"
+    
+  connection_error:
+    description: "Cannot connect to API server"
+    causes: ["Server down", "Network issue", "Firewall blocking"]
+    
+  invalid_json:
+    description: "Response is not valid JSON"
+    examples: ["HTML error page returned", "Malformed JSON", "Empty response"]
+    
+  authentication_error:
+    description: "Auth token or credentials issues"
+    examples: ["401 Unauthorized", "403 Forbidden", "Token expired"]
+
+analysis_requirements:
+  - name: "Error Grouping"
+    description: "Group similar API failures by error type and affected endpoints"
+    
+  - name: "Performance Analysis"
+    description: "Calculate average response time, identify slowest endpoints"
+    
+  - name: "Impact Assessment"
+    description: "Determine which failures are critical vs minor"
+    
+  - name: "Actionable Fixes"
+    description: "Provide specific recommendations for each failure group"
+
+output_format:
+  type: "json"
+  structure: |
+    {
+      "total_tests": 0,
+      "passed": 0,
+      "failed": 0,
+      "failure_groups": [
+        {
+          "error_type": "status_mismatch|body_mismatch|timeout|connection_error|invalid_json|authentication_error",
+          "count": 0,
+          "recommendation": "Specific fix recommendation",
+          "failed_tests": ["test name 1", "test name 2"],
+          "affected_endpoints": ["/api/endpoint1", "/api/endpoint2"]
+        }
+      ],
+      "performance_summary": {
+        "avg_response_time_ms": 0,
+        "slowest_endpoint": "/api/endpoint",
+        "slowest_time_ms": 0
+      },
+      "overall_recommendation": "High-level summary of all issues and recommended actions"
+    }
+  
+  rules:
+    - "Return ONLY valid JSON"
+    - "No markdown formatting"
+    - "No explanations outside JSON"
+    - "Include performance metrics"
+    - "Group by error type and affected endpoints"
+    - "Provide actionable fixes"
+
+example_output: |
+  {
+    "total_tests": 15,
+    "passed": 12,
+    "failed": 3,
+    "failure_groups": [
+      {
+        "error_type": "status_mismatch",
+        "count": 2,
+        "recommendation": "Check API implementation - endpoints returning 500 instead of expected 200",
+        "failed_tests": ["POST /users", "GET /profile"],
+        "affected_endpoints": ["/users", "/profile"]
+      },
+      {
+        "error_type": "authentication_error",
+        "count": 1,
+        "recommendation": "Refresh authentication token before test execution - token may be expired",
+        "failed_tests": ["GET /protected-resource"],
+        "affected_endpoints": ["/protected-resource"]
+      }
+    ],
+    "performance_summary": {
+      "avg_response_time_ms": 250,
+      "slowest_endpoint": "/report/generate",
+      "slowest_time_ms": 3500
+    },
+    "overall_recommendation": "API stability issue - multiple 500 errors indicate server-side problems. Investigate backend logs for root cause."
+  }
