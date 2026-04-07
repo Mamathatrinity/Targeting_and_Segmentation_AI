@@ -1,0 +1,25 @@
+# MCP Server Requirements
+# Model Context Protocol Server for centralized test infrastructure
+
+# MCP Core
+mcp>=1.0.0
+
+# Web Framework
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+
+# Browser Automation
+playwright>=1.40.0
+
+# HTTP Client
+httpx>=0.25.0
+
+# Database Clients
+pymysql>=1.1.0
+psycopg2-binary>=2.9.9
+sqlalchemy>=2.0.23
+
+# Utilities
+pydantic>=2.5.0
+python-dotenv>=1.0.0
+pyyaml>=6.0.1

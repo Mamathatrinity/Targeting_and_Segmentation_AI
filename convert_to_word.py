@@ -2,18 +2,20 @@
 Convert Markdown to Word Document
 """
 from docx import Document
-from docx.shared import Pt, RGBColor, Inches
+from docx.shared import Pt, Inches, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.style import WD_STYLE_TYPE
 import re
 
-def markdown_to_word(md_file, output_file):
-    """Convert markdown file to Word document"""
+
+def create_word_document(md_file, output_file):
+    """Convert markdown to Word document"""
     
-    # Read markdown file
+    # Read markdown
     with open(md_file, 'r', encoding='utf-8') as f:
-        md_content = f.read()
+        content = f.read()
     
-    # Create Word document
+    # Create document
     doc = Document()
     
     # Set default font
@@ -22,134 +24,136 @@ def markdown_to_word(md_file, output_file):
     font.name = 'Calibri'
     font.size = Pt(11)
     
-    # Process markdown line by line
-    lines = md_content.split('\n')
-    
+    # Parse markdown line by line
+    lines = content.split('\n')
     i = 0
+    in_table = False
+    table_data = []
+    
     while i < len(lines):
-        line = lines[i]
+        line = lines[i].strip()
         
         # Skip empty lines
-        if not line.strip():
+        if not line:
             i += 1
             continue
         
-        # Handle headers
-        if line.startswith('# '):
-            p = doc.add_heading(line[2:].strip(), level=1)
+        # Heading 1
+        if line.startswith('# ') and not line.startswith('##'):
+            heading = line[2:].strip()
+            p = doc.add_heading(heading, level=1)
+            p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        
+        # Heading 2
         elif line.startswith('## '):
-            p = doc.add_heading(line[3:].strip(), level=2)
+            heading = line[3:].strip()
+            p = doc.add_heading(heading, level=2)
+        
+        # Heading 3
         elif line.startswith('### '):
-            p = doc.add_heading(line[4:].strip(), level=3)
-        elif line.startswith('#### '):
-            p = doc.add_heading(line[5:].strip(), level=4)
+            heading = line[4:].strip()
+            p = doc.add_heading(heading, level=3)
         
-        # Handle horizontal rules
-        elif line.strip() == '---':
-            doc.add_paragraph('_' * 50)
+        # Table detection
+        elif '|' in line and not in_table:
+            # Start of table
+            in_table = True
+            table_data = [line]
         
-        # Handle bullet lists
-        elif line.strip().startswith('- ') or line.strip().startswith('* '):
-            text = line.strip()[2:]
-            # Remove markdown formatting
-            text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)  # Bold
-            text = re.sub(r'`(.*?)`', r'\1', text)  # Code
-            doc.add_paragraph(text, style='List Bullet')
+        elif in_table and '|' in line:
+            # Continue table
+            table_data.append(line)
         
-        # Handle numbered lists
-        elif re.match(r'^\d+\.', line.strip()):
-            text = re.sub(r'^\d+\.\s*', '', line.strip())
-            text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
-            text = re.sub(r'`(.*?)`', r'\1', text)
-            doc.add_paragraph(text, style='List Number')
+        elif in_table and '|' not in line:
+            # End of table - create it
+            create_table(doc, table_data)
+            in_table = False
+            table_data = []
+            continue
         
-        # Handle code blocks
-        elif line.strip().startswith('```'):
-            i += 1
+        # Code block
+        elif line.startswith('```'):
             code_lines = []
+            i += 1
             while i < len(lines) and not lines[i].strip().startswith('```'):
                 code_lines.append(lines[i])
                 i += 1
+            
+            # Add code as paragraph with monospace font
             if code_lines:
-                code_text = '\n'.join(code_lines)
-                p = doc.add_paragraph(code_text)
+                p = doc.add_paragraph('\n'.join(code_lines))
                 p.style = 'Normal'
                 for run in p.runs:
                     run.font.name = 'Courier New'
                     run.font.size = Pt(9)
         
-        # Handle tables
-        elif '|' in line and i + 1 < len(lines) and '|' in lines[i + 1]:
-            # Parse table
-            table_lines = []
-            while i < len(lines) and '|' in lines[i]:
-                table_lines.append(lines[i])
-                i += 1
-            i -= 1  # Step back one
-            
-            if len(table_lines) >= 2:
-                # Parse header
-                headers = [cell.strip() for cell in table_lines[0].split('|') if cell.strip()]
-                
-                # Parse rows (skip separator line)
-                rows = []
-                for line in table_lines[2:]:
-                    row = [cell.strip() for cell in line.split('|') if cell.strip()]
-                    if row:
-                        rows.append(row)
-                
-                # Create table
-                if rows:
-                    table = doc.add_table(rows=len(rows) + 1, cols=len(headers))
-                    table.style = 'Light Grid Accent 1'
-                    
-                    # Add headers
-                    for j, header in enumerate(headers):
-                        cell = table.rows[0].cells[j]
-                        cell.text = header
-                        for paragraph in cell.paragraphs:
-                            for run in paragraph.runs:
-                                run.bold = True
-                    
-                    # Add rows
-                    for i, row in enumerate(rows):
-                        for j, cell_text in enumerate(row):
-                            if j < len(table.rows[i + 1].cells):
-                                # Remove markdown formatting
-                                cell_text = re.sub(r'\*\*(.*?)\*\*', r'\1', cell_text)
-                                cell_text = re.sub(r'`(.*?)`', r'\1', cell_text)
-                                table.rows[i + 1].cells[j].text = cell_text
-                    
-                    doc.add_paragraph()  # Add space after table
+        # Bullet list
+        elif line.startswith('- '):
+            text = line[2:].strip()
+            doc.add_paragraph(text, style='List Bullet')
         
-        # Handle regular paragraphs
+        # Regular paragraph
         else:
-            # Remove markdown formatting
-            text = line.strip()
-            
-            # Skip if empty
-            if not text:
-                i += 1
-                continue
-            
-            # Bold and code
-            text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
-            text = re.sub(r'`(.*?)`', r'\1', text)
-            
-            # Add paragraph
-            p = doc.add_paragraph(text)
+            # Skip separator lines
+            if not line.startswith('---') and not line.startswith('==='):
+                doc.add_paragraph(line)
         
         i += 1
     
+    # Handle any remaining table
+    if in_table and table_data:
+        create_table(doc, table_data)
+    
     # Save document
     doc.save(output_file)
-    print(f"✅ Document saved: {output_file}")
+    print(f"✓ Word document created: {output_file}")
+
+
+def create_table(doc, table_data):
+    """Create a table from markdown data"""
+    if not table_data or len(table_data) < 2:
+        return
+    
+    # Parse table rows
+    rows = []
+    for line in table_data:
+        if '---' in line or '===' in line:
+            continue  # Skip separator
+        cells = [cell.strip() for cell in line.split('|')]
+        cells = [c for c in cells if c]  # Remove empty
+        if cells:
+            rows.append(cells)
+    
+    if not rows:
+        return
+    
+    # Determine number of columns
+    max_cols = max(len(row) for row in rows)
+    
+    # Create Word table
+    table = doc.add_table(rows=len(rows), cols=max_cols)
+    table.style = 'Light Grid Accent 1'
+    
+    # Fill table
+    for i, row_data in enumerate(rows):
+        row = table.rows[i]
+        for j, cell_text in enumerate(row_data):
+            if j < max_cols:
+                cell = row.cells[j]
+                cell.text = cell_text
+                
+                # Bold header row
+                if i == 0:
+                    for paragraph in cell.paragraphs:
+                        for run in paragraph.runs:
+                            run.font.bold = True
+    
+    # Add spacing after table
+    doc.add_paragraph()
+
 
 if __name__ == "__main__":
-    md_file = "AI_Testing_Cost_Analysis.md"
-    word_file = "AI_Testing_Cost_Analysis.docx"
-    
-    print(f"Converting {md_file} to {word_file}...")
-    markdown_to_word(md_file, word_file)
-    print(f"\n✅ Conversion complete!")
-    print(f"📄 Word document: {word_file}")
+    create_word_document(
+        'SYSTEM_ARCHITECTURE_DETAILED.md',
+        'SYSTEM_ARCHITECTURE_DETAILED.docx'
+    )
