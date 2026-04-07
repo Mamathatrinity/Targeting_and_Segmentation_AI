@@ -89,10 +89,10 @@ class PromptCache:
         total_hits = sum(entry['hits'] for entry in self.cache_store.values())
         
         return {
-            'total_entries': len(self.cache_store),
-            'total_hits': total_hits,
-            'cache_size_bytes': len(json.dumps(self.cache_store)),
-            'entries': len(self.cache_store)
+            'total_cached': len(self.cache_store),
+            'cache_hits': total_hits,
+            'cache_misses': 0,  # We don't track misses separately
+            'cache_size_bytes': len(str(self.cache_store))
         }
 
 

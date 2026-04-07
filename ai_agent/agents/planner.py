@@ -3,8 +3,8 @@ Planner Agent
 Generates test scenarios from UI data using Azure GPT-4o
 """
 from langchain_openai import AzureChatOpenAI
-from langchain.prompts import PromptTemplate
-from langchain.output_parsers import PydanticOutputParser
+from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field
 from typing import List
 import json
@@ -65,12 +65,13 @@ class PlannerAgent:
         # Prepare compact UI data for token efficiency
         compact_ui = self._compact_ui_data(ui_data)
         
-        # Format YAML prompt with variables
+        # Format YAML prompt with BOTH natural language + UI data (combined approach)
         formatted_prompt = format_prompt(
             self.prompt_data,
-            ui_data=json.dumps(compact_ui, indent=2),
-            domain_context="HCP Targeting & Segmentation: Medical specialties, segments, filters, NPI numbers",
-            compliance_requirements="HIPAA compliance, PII masking, data privacy",
+            user_description=ui_data.get("user_description", "Test all features on this page"),  # Business context
+            ui_data=json.dumps(compact_ui, indent=2),  # Technical details
+            domain_context="HCP Targeting & Segmentation: Medical specialties, segments, filters, NPI numbers, HIPAA compliance",
+            compliance_requirements="HIPAA compliance, PII masking, data privacy, audit logging",
             format_instructions=self.parser.get_format_instructions()
         )
         

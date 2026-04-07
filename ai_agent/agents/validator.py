@@ -3,7 +3,7 @@ Validator Agent
 Analyzes test results and identifies failure root causes using AI
 """
 from langchain_openai import AzureChatOpenAI
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from typing import Dict, List
 import json
 

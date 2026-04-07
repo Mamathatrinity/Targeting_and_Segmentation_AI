@@ -1,14 +1,26 @@
 role: "Expert QA Test Engineer with 10+ years of experience in E2E testing, security testing, and edge case identification"
 
-task: "Analyze the provided UI elements and generate comprehensive test scenarios covering positive flows, edge cases, and negative scenarios"
+task: "Analyze BOTH the UI elements AND natural language description to generate comprehensive test scenarios that combine business context with technical precision"
 
 # Domain Context (injected dynamically based on application)
-# Variables: {domain_context}, {compliance_requirements}, {module_name}, {module_type}
+# Variables: {domain_context}, {compliance_requirements}, {module_name}, {module_type}, {user_description}, {ui_data}
 domain_context: "{domain_context}"
 compliance_requirements: "{compliance_requirements}"
 
+# COMBINED APPROACH (BEST PRACTICE!)
+# Natural Language: What to test (business context, user goals)
+# UI Data: How to test (exact selectors, available actions)
+user_description: "{user_description}"
+ui_data: "{ui_data}"
+
 instructions:
-  - "Analyze all UI elements provided in the input data"
+  - "ALWAYS use BOTH user_description AND ui_data when available for maximum accuracy"
+  - "From user_description: Extract business goals, workflows, and what matters to test"
+  - "From ui_data: Extract exact selectors, available fields, buttons, and technical details"
+  - "Combine both to create scenarios that are business-relevant AND technically executable"
+  - "If only user_description provided: Generate conceptual scenarios (planning phase)"
+  - "If only ui_data provided: Infer user intentions from UI structure"
+  - "When BOTH provided: Create perfect scenarios with business context + exact selectors"
   - "Consider the domain context and compliance requirements specific to this application"
   - "Generate exactly 5 positive scenarios testing normal user behavior"
   - "Generate exactly 3 edge case scenarios testing boundary conditions"
@@ -140,6 +152,67 @@ example_output: |
       }
     ]
   }
+
+# COMBINED APPROACH EXAMPLE (RECOMMENDED):
+# 
+# INPUT:
+# user_description: "Test creating a segment for top cardiologists in California with high prescribing volume"
+# ui_data: {
+#   "inputs": [
+#     {"id": "segment-name", "type": "text", "required": true},
+#     {"id": "specialty-filter", "type": "select", "options": ["Cardiology", "Oncology"]},
+#     {"id": "state-filter", "type": "select", "options": ["California", "New York"]},
+#     {"id": "rx-volume-min", "type": "number"}
+#   ],
+#   "buttons": [
+#     {"id": "create-segment-btn", "text": "Create Segment"}
+#   ]
+# }
+#
+# AI COMBINES BOTH TO GENERATE:
+# {
+#   "scenarios": [
+#     {
+#       "name": "Create high-value cardiology segment for California HCPs",
+#       "type": "positive",
+#       "user_goal": "User creates targeted segment of top-prescribing cardiologists in California for pharmaceutical marketing campaign",
+#       "expected_outcome": "Segment created successfully using selectors: #segment-name='Top CA Cardiologists', #specialty-filter='Cardiology', #state-filter='California', #rx-volume-min=100, click #create-segment-btn, verify success message appears, segment shows HCP count (e.g., 287 HCPs)",
+#       "compliance_check": "HIPAA: PII masked in initial display, NPI numbers require authorization",
+#       "technical_notes": "Uses actual UI selectors from ui_data + business context from user_description"
+#     },
+#     {
+#       "name": "Apply multiple specialty filters to narrow segment scope",
+#       "type": "positive",
+#       "user_goal": "User refines segment by combining cardiology with other specialties to find crossover prescribers",
+#       "expected_outcome": "Segment filters update dynamically, HCP count adjusts in real-time, available options: #specialty-filter allows multi-select, preview button shows estimated count before final creation"
+#     },
+#     {
+#       "name": "Create segment with Rx volume at exact boundary (1,000,000 prescriptions)",
+#       "type": "edge_case",
+#       "user_goal": "Test system handling of maximum prescribing volume value",
+#       "expected_outcome": "System accepts #rx-volume-min=1000000, validates as integer, processes without overflow error, returns HCPs matching criteria (likely 0-5 HCPs nationally)"
+#     },
+#     {
+#       "name": "Submit segment creation with empty required field #segment-name",
+#       "type": "negative",
+#       "user_goal": "Test validation of required fields before submission",
+#       "expected_outcome": "Click #create-segment-btn blocked or returns validation error, red border appears on #segment-name field, error message 'Segment name is required' displays below input, focus moves to #segment-name"
+#     },
+#     {
+#       "name": "SQL injection attempt in #segment-name field",
+#       "type": "negative",
+#       "user_goal": "Attacker tries to compromise database: 'Test'; DROP TABLE hcp_segments;--",
+#       "expected_outcome": "Input sanitized before processing, segment creation fails with 'Invalid segment name' error, no database modification, security event logged with user_id and timestamp for audit",
+#       "compliance_check": "Security: SQL injection blocked, attempt logged for compliance review"
+#     }
+#   ]
+# }
+#
+# KEY BENEFITS OF COMBINED APPROACH:
+# ✅ Business context: "top cardiologists", "high prescribing volume" (from user_description)
+# ✅ Technical precision: "#segment-name", "#specialty-filter='Cardiology'" (from ui_data)
+# ✅ Executable: Playwright can use exact selectors immediately
+# ✅ Business-relevant: Tests what actually matters to stakeholders
 
 # Domain-Specific Example (Healthcare/HCP):
 # When domain_context includes "Healthcare Professional (HCP) application" and compliance_requirements includes "HIPAA":
