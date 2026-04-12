@@ -1,0 +1,4706 @@
+{
+  "test_cases": [
+    {
+      "name": "test_login_valid_e2e",
+      "description": "User logs in with valid credentials and system validates UI, API session, and database login timestamp",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.healthcare.com/login",
+          "expected": "Login page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "john.doe@healthcare.com",
+          "expected": "Email field populated with john.doe@healthcare.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "SecurePass123!",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Login",
+          "expected": "Login form submitted, redirect initiated",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Welcome, John",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/auth/session",
+          "expected_status": 200,
+          "expected": "Session API returns 200 with valid user_id and token",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/auth/session",
+          "field": "user.email",
+          "expected_value": "john.doe@healthcare.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "last_login",
+          "condition": "IS NOT NULL WHERE email = 'john.doe@healthcare.com'",
+          "expected": "Database shows last_login timestamp updated within last 10 seconds",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "login_count",
+          "condition": "> 0 WHERE email = 'john.doe@healthcare.com'",
+          "expected": "Login count incremented by 1",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "positive",
+      "scenario_text": "User logs in with email 'john.doe@healthcare.com' and password 'SecurePass123!', sees 'Welcome, John' message on Dashboard, and session cookie is set",
+      "focus_area": "authentication"
+    },
+    {
+      "name": "test_login_valid_admin",
+      "description": "User authenticates with valid admin credentials and system validates UI, API session, and database login timestamp",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.trinitylifesciences.com/login",
+          "expected": "Login page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "admin@trinitylifesciences.com",
+          "expected": "Email field populated with admin@trinitylifesciences.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "Admin@2024",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Login",
+          "expected": "Login form submitted, redirect initiated",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "User profile icon",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/auth/session",
+          "expected_status": 200,
+          "expected": "Session API returns 200 with valid user_id and token",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/auth/session",
+          "field": "user.email",
+          "expected_value": "admin@trinitylifesciences.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "last_login",
+          "condition": "IS NOT NULL WHERE email = 'admin@trinitylifesciences.com'",
+          "expected": "Database shows last_login timestamp updated within last 10 seconds",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "login_count",
+          "condition": "> 0 WHERE email = 'admin@trinitylifesciences.com'",
+          "expected": "Login count incremented by 1",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "positive",
+      "scenario_text": "User authenticates with email 'admin@trinitylifesciences.com' and password 'Admin@2024', is redirected to /dashboard, and sees user profile icon",
+      "focus_area": "authentication"
+    },
+    {
+      "name": "test_login_valid_e2e",
+      "description": "User logs in with valid credentials and system validates UI, API session, and database login timestamp",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/login",
+          "expected": "Login page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "test.user@domain.org",
+          "expected": "Email field populated with test.user@domain.org",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "Test!Pass99",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Login",
+          "expected": "Login form submitted, redirect initiated",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Dashboard",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/auth/session",
+          "expected_status": 200,
+          "expected": "Session API returns 200 with valid user_id and token",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/auth/session",
+          "field": "user.email",
+          "expected_value": "test.user@domain.org",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "last_login",
+          "condition": "IS NOT NULL WHERE email = 'test.user@domain.org'",
+          "expected": "Database shows last_login timestamp updated within last 10 seconds",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "session_cookie",
+          "condition": "IS NOT NULL WHERE email = 'test.user@domain.org'",
+          "expected": "Session cookie is set in the database",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "positive",
+      "scenario_text": "User logs in with email 'test.user@domain.org' and password 'Test!Pass99', session cookie is set, and last login timestamp updates",
+      "focus_area": "authentication"
+    },
+    {
+      "name": "test_login_remember_me_e2e",
+      "description": "User logs in with 'Remember Me' option, and system validates UI, API session persistence, and database login timestamp",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/login",
+          "expected": "Login page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "remember@domain.com",
+          "expected": "Email field populated with remember@domain.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "RememberMe123!",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Remember Me",
+          "expected": "Remember Me option selected",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Login",
+          "expected": "Login form submitted, redirect initiated",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Welcome back!",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/auth/session",
+          "expected_status": 200,
+          "expected": "Session API returns 200 with valid user_id and token",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/auth/session",
+          "field": "user.email",
+          "expected_value": "remember@domain.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "last_login",
+          "condition": "IS NOT NULL WHERE email = 'remember@domain.com'",
+          "expected": "Database shows last_login timestamp updated within last 10 seconds",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "remember_me_token",
+          "condition": "IS NOT NULL WHERE email = 'remember@domain.com'",
+          "expected": "Remember Me token is stored in the database",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "positive",
+      "scenario_text": "User selects 'Remember Me' option, logs in with email 'remember@domain.com' and password 'RememberMe123!', and sees 'Welcome back!' message on subsequent visits",
+      "focus_area": "authentication"
+    },
+    {
+      "name": "test_login_specialist_e2e",
+      "description": "User logs in with valid specialist credentials and system validates UI, API session, and database login timestamp",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/login",
+          "expected": "Login page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "specialist@medical.com",
+          "expected": "Email field populated with specialist@medical.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "Specialist2023!",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Login",
+          "expected": "Login form submitted, redirect initiated",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Dashboard",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_element",
+          "target": "Medical Specialties",
+          "expected": "Medical specialties section visible on Dashboard",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_element",
+          "target": "Segments",
+          "expected": "Segments section visible on Dashboard",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/auth/session",
+          "expected_status": 200,
+          "expected": "Session API returns 200 with valid user_id and token",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/auth/session",
+          "field": "user.email",
+          "expected_value": "specialist@medical.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "last_login",
+          "condition": "IS NOT NULL WHERE email = 'specialist@medical.com'",
+          "expected": "Database shows last_login timestamp updated within last 10 seconds",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "login_count",
+          "condition": "> 0 WHERE email = 'specialist@medical.com'",
+          "expected": "Login count incremented by 1",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "positive",
+      "scenario_text": "User logs in with email 'specialist@medical.com' and password 'Specialist2023!', sees 'Dashboard' with medical specialties and segments displayed correctly",
+      "focus_area": "authentication"
+    },
+    {
+      "name": "test_login_npi_user_e2e",
+      "description": "User logs in with valid credentials and system validates UI, API session, and database login timestamp with NPI numbers masked for HIPAA compliance",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/login",
+          "expected": "Login page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "npi.user@domain.com",
+          "expected": "Email field populated with npi.user@domain.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "NPIUser2023!",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Login",
+          "expected": "Login form submitted, redirect initiated",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Dashboard",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_element",
+          "target": "NPI numbers",
+          "expected": "NPI numbers are masked for HIPAA compliance",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/auth/session",
+          "expected_status": 200,
+          "expected": "Session API returns 200 with valid user_id and token",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/auth/session",
+          "field": "user.email",
+          "expected_value": "npi.user@domain.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "last_login",
+          "condition": "IS NOT NULL WHERE email = 'npi.user@domain.com'",
+          "expected": "Database shows last_login timestamp updated within last 10 seconds",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "login_count",
+          "condition": "> 0 WHERE email = 'npi.user@domain.com'",
+          "expected": "Login count incremented by 1",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "positive",
+      "scenario_text": "User logs in with email 'npi.user@domain.com' and password 'NPIUser2023!', sees 'Dashboard' with NPI numbers masked for HIPAA compliance",
+      "focus_area": "authentication"
+    },
+    {
+      "name": "test_login_privacy_compliance",
+      "description": "User logs in with valid credentials and system validates UI, API session, and database audit logging for data privacy compliance",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/login",
+          "expected": "Login page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "privacy@domain.com",
+          "expected": "Email field populated with privacy@domain.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "Privacy123!",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Login",
+          "expected": "Login form submitted, redirect initiated",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Dashboard",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/auth/session",
+          "expected_status": 200,
+          "expected": "Session API returns 200 with valid user_id and token",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/auth/session",
+          "field": "user.email",
+          "expected_value": "privacy@domain.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "last_login",
+          "condition": "IS NOT NULL WHERE email = 'privacy@domain.com'",
+          "expected": "Database shows last_login timestamp updated within last 10 seconds",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "audit_logs",
+          "column": "action",
+          "condition": "= 'login' AND user_email = 'privacy@domain.com' ORDER BY timestamp DESC LIMIT 1",
+          "expected": "Audit log entry created for login action with correct user email",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "positive",
+      "scenario_text": "User logs in with email 'privacy@domain.com' and password 'Privacy123!', sees 'Dashboard' with audit logging enabled for data privacy compliance",
+      "focus_area": "authentication"
+    },
+    {
+      "name": "test_login_with_segmentation",
+      "description": "User logs in with valid credentials and sees Dashboard with correct segmentation filters applied",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/login",
+          "expected": "Login page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "segment.user@domain.com",
+          "expected": "Email field populated with segment.user@domain.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "SegmentUser2023!",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Login",
+          "expected": "Login form submitted, redirect initiated",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Dashboard",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_element",
+          "target": "Segmentation Filters",
+          "expected": "Segmentation filters visible on Dashboard",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/auth/session",
+          "expected_status": 200,
+          "expected": "Session API returns 200 with valid user_id and token",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/segmentation",
+          "field": "filters",
+          "expected_value": "correct filters",
+          "expected": "API response contains correct segmentation filters",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "last_login",
+          "condition": "IS NOT NULL WHERE email = 'segment.user@domain.com'",
+          "expected": "Database shows last_login timestamp updated within last 10 seconds",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "user_segments",
+          "column": "filters",
+          "condition": "WHERE user_email = 'segment.user@domain.com'",
+          "expected": "Database contains correct segmentation filters for the user",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "positive",
+      "scenario_text": "User logs in with email 'segment.user@domain.com' and password 'SegmentUser2023!', sees 'Dashboard' with correct segmentation filters applied",
+      "focus_area": "authentication"
+    },
+    {
+      "name": "test_login_hipaa_compliance",
+      "description": "User logs in with valid credentials and system validates UI, API session, and database login timestamp with PII masked for HIPAA compliance",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/login",
+          "expected": "Login page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "secure@domain.com",
+          "expected": "Email field populated with secure@domain.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "SecurePass2023!",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Login",
+          "expected": "Login form submitted, redirect initiated",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Dashboard",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_element",
+          "target": "PII Masking",
+          "expected": "PII data is masked on the dashboard for HIPAA compliance",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/auth/session",
+          "expected_status": 200,
+          "expected": "Session API returns 200 with valid user_id and token",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/auth/session",
+          "field": "user.email",
+          "expected_value": "secure@domain.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "last_login",
+          "condition": "IS NOT NULL WHERE email = 'secure@domain.com'",
+          "expected": "Database shows last_login timestamp updated within last 10 seconds",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "login_count",
+          "condition": "> 0 WHERE email = 'secure@domain.com'",
+          "expected": "Login count incremented by 1",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "positive",
+      "scenario_text": "User logs in with email 'secure@domain.com' and password 'SecurePass2023!', sees 'Dashboard' with PII masked for HIPAA compliance",
+      "focus_area": "authentication"
+    },
+    {
+      "name": "test_login_audit_logging_enabled",
+      "description": "User logs in with valid credentials and system validates UI, API session, and database audit logging",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/login",
+          "expected": "Login page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "audit@domain.com",
+          "expected": "Email field populated with audit@domain.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "AuditLog2023!",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Login",
+          "expected": "Login form submitted, redirect initiated",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Dashboard",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/auth/session",
+          "expected_status": 200,
+          "expected": "Session API returns 200 with valid user_id and token",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/auth/session",
+          "field": "user.email",
+          "expected_value": "audit@domain.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "audit_logs",
+          "column": "action",
+          "condition": "= 'login' WHERE user_email = 'audit@domain.com' ORDER BY timestamp DESC LIMIT 1",
+          "expected": "Audit log entry created for login action",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "audit_logs",
+          "column": "status",
+          "condition": "= 'success' WHERE user_email = 'audit@domain.com' ORDER BY timestamp DESC LIMIT 1",
+          "expected": "Audit log entry shows successful login",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "positive",
+      "scenario_text": "User logs in with email 'audit@domain.com' and password 'AuditLog2023!', sees 'Dashboard' with audit logging enabled for compliance tracking",
+      "focus_area": "authentication"
+    },
+    {
+      "name": "test_login_session_management_e2e",
+      "description": "User logs in with valid credentials and system validates UI, API session, and database session management features",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/login",
+          "expected": "Login page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "session.management@domain.com",
+          "expected": "Email field populated with session.management@domain.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "SessionManage2023!",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Login",
+          "expected": "Login form submitted, redirect initiated",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Dashboard",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/auth/session",
+          "expected_status": 200,
+          "expected": "Session API returns 200 with valid user_id and token",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/auth/session",
+          "field": "user.email",
+          "expected_value": "session.management@domain.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "last_login",
+          "condition": "IS NOT NULL WHERE email = 'session.management@domain.com'",
+          "expected": "Database shows last_login timestamp updated within last 10 seconds",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "sessions",
+          "column": "status",
+          "condition": "= 'active' WHERE user_email = 'session.management@domain.com'",
+          "expected": "Session management features are active in the database",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "positive",
+      "scenario_text": "User logs in with email 'session.management@domain.com' and password 'SessionManage2023!', sees 'Dashboard' with session management features active",
+      "focus_area": "authentication"
+    },
+    {
+      "name": "test_user_registration_e2e",
+      "description": "User registers a new account and verifies it through email confirmation",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/register",
+          "expected": "Registration page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "new.user@example.com",
+          "expected": "Email field populated with new.user@example.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "NewUserPass123!",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Confirm Password",
+          "value": "NewUserPass123!",
+          "expected": "Confirm Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Register",
+          "expected": "Registration form submitted, confirmation message displayed",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Please check your email to verify your account",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/register",
+          "expected_status": 201,
+          "expected": "API returns 201 Created with user registration details",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/register",
+          "field": "user.email",
+          "expected_value": "new.user@example.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "email",
+          "condition": "= 'new.user@example.com'",
+          "expected": "User record created in database",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "is_verified",
+          "condition": "= 0 WHERE email = 'new.user@example.com'",
+          "expected": "User account initially unverified",
+          "layer": "DB"
+        },
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/verify?token=sampleToken",
+          "expected": "Account verification page loads",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Verify Account",
+          "expected": "Account verification submitted",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Your account has been successfully verified",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/verify",
+          "expected_status": 200,
+          "expected": "API returns 200 OK for account verification",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "is_verified",
+          "condition": "= 1 WHERE email = 'new.user@example.com'",
+          "expected": "User account marked as verified in database",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "edge_case",
+      "scenario_text": "User enters maximum length email (254 characters) and valid password 'Pass123!', system accepts and displays Dashboard successfully",
+      "focus_area": "authentication"
+    },
+    {
+      "name": "test_user_registration_e2e",
+      "description": "User registers a new account and verifies it through email confirmation",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/register",
+          "expected": "Registration page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "new.user@example.com",
+          "expected": "Email field populated with new.user@example.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "NewUserPass123!",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Confirm Password",
+          "value": "NewUserPass123!",
+          "expected": "Confirm Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Register",
+          "expected": "Registration form submitted, confirmation message displayed",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Please check your email to verify your account",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/register",
+          "expected_status": 201,
+          "expected": "API returns 201 Created with user registration details",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/register",
+          "field": "user.email",
+          "expected_value": "new.user@example.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "email",
+          "condition": "= 'new.user@example.com'",
+          "expected": "User record created in database",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "is_verified",
+          "condition": "= 0 WHERE email = 'new.user@example.com'",
+          "expected": "User account initially unverified",
+          "layer": "DB"
+        },
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/verify?token=sampleToken",
+          "expected": "Account verification page loads",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Verify Account",
+          "expected": "Account verification submitted",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Your account has been successfully verified",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/verify",
+          "expected_status": 200,
+          "expected": "API returns 200 OK for account verification",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "is_verified",
+          "condition": "= 1 WHERE email = 'new.user@example.com'",
+          "expected": "User account marked as verified in database",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "edge_case",
+      "scenario_text": "User clicks Login with only Email filled (no password), system shows 'Password is required' validation error",
+      "focus_area": "authentication"
+    },
+    {
+      "name": "test_user_registration_e2e",
+      "description": "User registers a new account and verifies it through email confirmation",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/register",
+          "expected": "Registration page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "new.user@example.com",
+          "expected": "Email field populated with new.user@example.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "NewUserPass123!",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Confirm Password",
+          "value": "NewUserPass123!",
+          "expected": "Confirm Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Register",
+          "expected": "Registration form submitted, confirmation message displayed",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Please check your email to verify your account",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/register",
+          "expected_status": 201,
+          "expected": "API returns 201 Created with user registration details",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/register",
+          "field": "user.email",
+          "expected_value": "new.user@example.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "email",
+          "condition": "= 'new.user@example.com'",
+          "expected": "User record created in database",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "is_verified",
+          "condition": "= 0 WHERE email = 'new.user@example.com'",
+          "expected": "User account initially unverified",
+          "layer": "DB"
+        },
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/verify?token=sampleToken",
+          "expected": "Account verification page loads",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Verify Account",
+          "expected": "Account verification submitted",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Your account has been successfully verified",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/verify",
+          "expected_status": 200,
+          "expected": "API returns 200 OK for account verification",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "is_verified",
+          "condition": "= 1 WHERE email = 'new.user@example.com'",
+          "expected": "User account marked as verified in database",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "edge_case",
+      "scenario_text": "User enters email 'user+tag@domain.com' (with plus sign) and password 'Valid123!', system accepts and logs in successfully",
+      "focus_area": "authentication"
+    },
+    {
+      "name": "test_user_registration_e2e",
+      "description": "User registers a new account and verifies it through email confirmation",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/register",
+          "expected": "Registration page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "new.user@example.com",
+          "expected": "Email field populated with new.user@example.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "NewUserPass123!",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Confirm Password",
+          "value": "NewUserPass123!",
+          "expected": "Confirm Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Register",
+          "expected": "Registration form submitted, confirmation message displayed",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Please check your email to verify your account",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/register",
+          "expected_status": 201,
+          "expected": "API returns 201 Created with user registration details",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/register",
+          "field": "user.email",
+          "expected_value": "new.user@example.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "email",
+          "condition": "= 'new.user@example.com'",
+          "expected": "User record created in database",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "is_verified",
+          "condition": "= 0 WHERE email = 'new.user@example.com'",
+          "expected": "User account initially unverified",
+          "layer": "DB"
+        },
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/verify?token=sampleToken",
+          "expected": "Account verification page loads",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Verify Account",
+          "expected": "Account verification submitted",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Your account has been successfully verified",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/verify",
+          "expected_status": 200,
+          "expected": "API returns 200 OK for account verification",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "is_verified",
+          "condition": "= 1 WHERE email = 'new.user@example.com'",
+          "expected": "User account marked as verified in database",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "edge_case",
+      "scenario_text": "User enters email with special characters 'o'brien@domain.com' and password 'SpecialChar123!', system accepts and logs in successfully",
+      "focus_area": "authentication"
+    },
+    {
+      "name": "test_user_registration_e2e",
+      "description": "User registers a new account and verifies it through email confirmation",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/register",
+          "expected": "Registration page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "new.user@example.com",
+          "expected": "Email field populated with new.user@example.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "NewUserPass123!",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Confirm Password",
+          "value": "NewUserPass123!",
+          "expected": "Confirm Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Register",
+          "expected": "Registration form submitted, confirmation message displayed",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Please check your email to verify your account",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/register",
+          "expected_status": 201,
+          "expected": "API returns 201 Created with user registration details",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/register",
+          "field": "user.email",
+          "expected_value": "new.user@example.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "email",
+          "condition": "= 'new.user@example.com'",
+          "expected": "User record created in database",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "is_verified",
+          "condition": "= 0 WHERE email = 'new.user@example.com'",
+          "expected": "User account initially unverified",
+          "layer": "DB"
+        },
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/verify?token=sampleToken",
+          "expected": "Account verification page loads",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Verify Account",
+          "expected": "Account verification submitted",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Your account has been successfully verified",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/verify",
+          "expected_status": 200,
+          "expected": "API returns 200 OK for account verification",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "is_verified",
+          "condition": "= 1 WHERE email = 'new.user@example.com'",
+          "expected": "User account marked as verified in database",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "edge_case",
+      "scenario_text": "User enters password with maximum length (128 characters), system accepts and logs in successfully",
+      "focus_area": "authentication"
+    },
+    {
+      "name": "test_user_registration_e2e",
+      "description": "User registers a new account and verifies it through email confirmation",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/register",
+          "expected": "Registration page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "new.user@example.com",
+          "expected": "Email field populated with new.user@example.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "NewUserPass123!",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Confirm Password",
+          "value": "NewUserPass123!",
+          "expected": "Confirm Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Register",
+          "expected": "Registration form submitted, confirmation message displayed",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Please check your email to verify your account",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/register",
+          "expected_status": 201,
+          "expected": "API returns 201 Created with user registration details",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/register",
+          "field": "user.email",
+          "expected_value": "new.user@example.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "email",
+          "condition": "= 'new.user@example.com'",
+          "expected": "User record created in database",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "is_verified",
+          "condition": "= 0 WHERE email = 'new.user@example.com'",
+          "expected": "User account initially unverified",
+          "layer": "DB"
+        },
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/verify?token=sampleToken",
+          "expected": "Account verification page loads",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Verify Account",
+          "expected": "Account verification submitted",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Your account has been successfully verified",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/verify",
+          "expected_status": 200,
+          "expected": "API returns 200 OK for account verification",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "is_verified",
+          "condition": "= 1 WHERE email = 'new.user@example.com'",
+          "expected": "User account marked as verified in database",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "edge_case",
+      "scenario_text": "User logs in with email 'edge.case@domain.com' and password 'EdgeCase123!', quickly navigates back and forward, session remains active",
+      "focus_area": "authentication"
+    },
+    {
+      "name": "test_user_registration_e2e",
+      "description": "User registers a new account and verifies it through email confirmation",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/register",
+          "expected": "Registration page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "new.user@example.com",
+          "expected": "Email field populated with new.user@example.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "NewUserPass123!",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Confirm Password",
+          "value": "NewUserPass123!",
+          "expected": "Confirm Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Register",
+          "expected": "Registration form submitted, confirmation message displayed",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Please check your email to verify your account",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/register",
+          "expected_status": 201,
+          "expected": "API returns 201 Created with user registration details",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/register",
+          "field": "user.email",
+          "expected_value": "new.user@example.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "email",
+          "condition": "= 'new.user@example.com'",
+          "expected": "User record created in database",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "is_verified",
+          "condition": "= 0 WHERE email = 'new.user@example.com'",
+          "expected": "User account initially unverified",
+          "layer": "DB"
+        },
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/verify?token=sampleToken",
+          "expected": "Account verification page loads",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Verify Account",
+          "expected": "Account verification submitted",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Your account has been successfully verified",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/verify",
+          "expected_status": 200,
+          "expected": "API returns 200 OK for account verification",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "is_verified",
+          "condition": "= 1 WHERE email = 'new.user@example.com'",
+          "expected": "User account marked as verified in database",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "edge_case",
+      "scenario_text": "User logs in with email 'unicode@domain.com' and password 'Unicode123!', system accepts and logs in successfully with unicode characters in email",
+      "focus_area": "authentication"
+    },
+    {
+      "name": "test_login_sql_injection_blocked",
+      "description": "Security test: SQL injection attempt is sanitized, login blocked, and security event logged",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/login",
+          "expected": "Login page loads",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "admin' OR '1'='1' --",
+          "expected": "Malicious input entered in email field",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "anypassword",
+          "expected": "Password field populated",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Login",
+          "expected": "Login attempt submitted",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Invalid email format",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/auth/login",
+          "expected_status": 400,
+          "expected": "API rejects malicious input with 400 Bad Request",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/auth/login",
+          "field": "error",
+          "expected_value": "Invalid email format",
+          "expected": "API error message confirms input validation",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "security_logs",
+          "column": "event_type",
+          "condition": "= 'sql_injection_attempt' ORDER BY created_at DESC LIMIT 1",
+          "expected": "Security event logged with SQL injection attempt details",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "negative",
+      "scenario_text": "User enters SQL injection 'admin' OR '1'='1' -- in email field, system shows 'Invalid email format' and blocks login",
+      "focus_area": "authentication"
+    },
+    {
+      "name": "test_login_invalid_credentials",
+      "description": "User attempts to log in with incorrect password and system displays an error message",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/login",
+          "expected": "Login page loads",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "test@test.com",
+          "expected": "Email field populated with test@test.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "WrongPass",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Login",
+          "expected": "Login form submitted",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Invalid credentials",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/auth/login",
+          "expected_status": 401,
+          "expected": "API returns 401 Unauthorized for invalid credentials",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/auth/login",
+          "field": "error",
+          "expected_value": "Invalid credentials",
+          "expected": "API response contains error message for invalid credentials",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "login_attempts",
+          "column": "status",
+          "condition": "= 'failed' WHERE email = 'test@test.com' ORDER BY attempt_time DESC LIMIT 1",
+          "expected": "Database logs failed login attempt",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "negative",
+      "scenario_text": "User enters wrong password 'WrongPass' for email 'test@test.com', system shows 'Invalid credentials' error",
+      "focus_area": "authentication"
+    },
+    {
+      "name": "test_login_empty_fields",
+      "description": "User attempts to log in with empty email and password fields, expecting validation errors",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/login",
+          "expected": "Login page loads",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "",
+          "expected": "Email field left empty",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "",
+          "expected": "Password field left empty",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Login",
+          "expected": "Login attempt submitted with empty fields",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Email and Password are required",
+          "layer": "UI"
+        }
+      ],
+      "scenario_type": "negative",
+      "scenario_text": "User leaves both fields empty and clicks Login, system shows 'Email and Password are required' validation error",
+      "focus_area": "authentication"
+    },
+    {
+      "name": "test_invalid_email_format",
+      "description": "User enters an invalid email format without TLD and system displays an error message",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/login",
+          "expected": "Login page loads",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "invalid.email@domain",
+          "expected": "Email field populated with invalid.email@domain",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "anypassword",
+          "expected": "Password field populated",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Login",
+          "expected": "Login attempt submitted",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Invalid email format",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/auth/login",
+          "expected_status": 400,
+          "expected": "API rejects invalid email format with 400 Bad Request",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/auth/login",
+          "field": "error",
+          "expected_value": "Invalid email format",
+          "expected": "API error message confirms invalid email format",
+          "layer": "API"
+        }
+      ],
+      "scenario_type": "negative",
+      "scenario_text": "User enters email 'invalid.email@domain' without TLD, system shows 'Invalid email format' error",
+      "focus_area": "authentication"
+    },
+    {
+      "name": "test_xss_injection_blocked",
+      "description": "Security test: XSS attempt is sanitized, login blocked, and security event logged",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/login",
+          "expected": "Login page loads",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "<script>alert(1)</script>",
+          "expected": "Malicious input entered in email field",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "anypassword",
+          "expected": "Password field populated",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Login",
+          "expected": "Login attempt submitted",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Invalid email format",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/auth/login",
+          "expected_status": 400,
+          "expected": "API rejects malicious input with 400 Bad Request",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/auth/login",
+          "field": "error",
+          "expected_value": "Invalid email format",
+          "expected": "API error message confirms input validation",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "security_logs",
+          "column": "event_type",
+          "condition": "= 'xss_attempt' ORDER BY created_at DESC LIMIT 1",
+          "expected": "Security event logged with XSS attempt details",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "negative",
+      "scenario_text": "User attempts cross-site scripting (XSS) in email field '<script>alert(1)</script>', system sanitizes input and shows 'Invalid email format' error",
+      "focus_area": "authentication"
+    },
+    {
+      "name": "test_login_expired_session",
+      "description": "User attempts to login with an expired session, system displays 'Session expired, please login again' message",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/login",
+          "expected": "Login page loads",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "user@example.com",
+          "expected": "Email field populated with user@example.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "ValidPassword123",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Login",
+          "expected": "Login form submitted",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Session expired, please login again",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/auth/login",
+          "expected_status": 401,
+          "expected": "API returns 401 Unauthorized due to expired session",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/auth/login",
+          "field": "error",
+          "expected_value": "Session expired",
+          "expected": "API response contains 'Session expired' error message",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "sessions",
+          "column": "status",
+          "condition": "= 'expired' WHERE user_id = (SELECT id FROM users WHERE email = 'user@example.com')",
+          "expected": "Database shows session status as expired for the user",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "negative",
+      "scenario_text": "User tries to login with expired session, system shows 'Session expired, please login again' message",
+      "focus_area": "authentication"
+    },
+    {
+      "name": "test_login_valid_e2e",
+      "description": "User logs in with valid credentials and system validates UI, API session, and database login timestamp",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.healthcare.com/login",
+          "expected": "Login page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "doctor.jane@healthcare.com",
+          "expected": "Email field populated with doctor.jane@healthcare.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "SecurePass123!",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Login",
+          "expected": "Login form submitted, redirect initiated",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Welcome, Dr. Jane",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/auth/session",
+          "expected_status": 200,
+          "expected": "Session API returns 200 with valid user_id and token",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/auth/session",
+          "field": "user.email",
+          "expected_value": "doctor.jane@healthcare.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "last_login",
+          "condition": "IS NOT NULL WHERE email = 'doctor.jane@healthcare.com'",
+          "expected": "Database shows last_login timestamp updated within last 10 seconds",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "login_count",
+          "condition": "> 0 WHERE email = 'doctor.jane@healthcare.com'",
+          "expected": "Login count incremented by 1",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "positive",
+      "scenario_text": "User logs in with email 'doctor.jane@healthcare.com' and password 'SecurePass123!', sees 'Welcome, Dr. Jane' message on Dashboard",
+      "focus_area": "security"
+    },
+    {
+      "name": "test_login_admin_e2e",
+      "description": "User authenticates with valid admin credentials and system validates UI, API session, and database login timestamp",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.hospital.com/login",
+          "expected": "Login page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "admin@hospital.com",
+          "expected": "Email field populated with admin@hospital.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "Admin@2024",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Login",
+          "expected": "Login form submitted, redirect initiated",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "User profile icon",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/auth/session",
+          "expected_status": 200,
+          "expected": "Session API returns 200 with valid user_id and token",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/auth/session",
+          "field": "user.email",
+          "expected_value": "admin@hospital.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "last_login",
+          "condition": "IS NOT NULL WHERE email = 'admin@hospital.com'",
+          "expected": "Database shows last_login timestamp updated within last 10 seconds",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "login_count",
+          "condition": "> 0 WHERE email = 'admin@hospital.com'",
+          "expected": "Login count incremented by 1",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "positive",
+      "scenario_text": "User authenticates with email 'admin@hospital.com' and password 'Admin@2024', is redirected to /dashboard, and sees user profile icon",
+      "focus_area": "security"
+    },
+    {
+      "name": "test_login_valid_hcp_user",
+      "description": "User logs in with valid HCP credentials, session is established, and last login timestamp is updated in the database",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/login",
+          "expected": "Login page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "hcp.user@domain.org",
+          "expected": "Email field populated with hcp.user@domain.org",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "HCP!Pass99",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Login",
+          "expected": "Login form submitted, redirect initiated",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Dashboard",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/auth/session",
+          "expected_status": 200,
+          "expected": "Session API returns 200 with valid user_id and token",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/auth/session",
+          "field": "user.email",
+          "expected_value": "hcp.user@domain.org",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "last_login",
+          "condition": "IS NOT NULL WHERE email = 'hcp.user@domain.org'",
+          "expected": "Database shows last_login timestamp updated within last 10 seconds",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "positive",
+      "scenario_text": "User logs in with email 'hcp.user@domain.org' and password 'HCP!Pass99', session cookie is set, and last login timestamp updates",
+      "focus_area": "security"
+    },
+    {
+      "name": "test_filter_hcps_by_specialty_and_segment",
+      "description": "User filters HCPs by selecting 'Cardiology' specialty and 'High Value' segment, and validates UI, API response, and database query execution",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/hcps",
+          "expected": "HCPs page loads with filter options visible",
+          "layer": "UI"
+        },
+        {
+          "action": "select",
+          "target": "Specialty dropdown",
+          "value": "Cardiology",
+          "expected": "Specialty dropdown set to Cardiology",
+          "layer": "UI"
+        },
+        {
+          "action": "select",
+          "target": "Segment dropdown",
+          "value": "High Value",
+          "expected": "Segment dropdown set to High Value",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Apply Filters",
+          "expected": "Filters applied, loading indicator appears",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Filtered list of HCPs",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_element",
+          "target": "HCP list table",
+          "expected": "HCP list table visible with filtered results",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/hcps?specialty=Cardiology&segment=High%20Value",
+          "expected_status": 200,
+          "expected": "API returns 200 with filtered HCP records",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/hcps?specialty=Cardiology&segment=High%20Value",
+          "field": "results[0].specialty",
+          "expected_value": "Cardiology",
+          "expected": "First result contains Cardiology in specialty field",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db_count",
+          "table": "hcps",
+          "condition": "WHERE specialty = 'Cardiology' AND segment = 'High Value'",
+          "expected": "Database returns count > 0 matching filter criteria",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "positive",
+      "scenario_text": "User selects medical specialty 'Cardiology', segment 'High Value', clicks 'Apply Filters', and sees filtered list of HCPs",
+      "focus_area": "security"
+    },
+    {
+      "name": "test_search_hcp_by_npi",
+      "description": "User searches for HCP by entering a valid NPI number and validates UI, API response, and database record",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/hcp-search",
+          "expected": "HCP search page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "NPI number",
+          "value": "1234567890",
+          "expected": "NPI number field populated with 1234567890",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Search",
+          "expected": "Search initiated, loading indicator appears",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "HCP Details",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_element",
+          "target": "HCP Name",
+          "expected": "HCP name is visible on details page",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/hcp/search?npi=1234567890",
+          "expected_status": 200,
+          "expected": "API returns 200 with HCP details for the given NPI",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/hcp/search?npi=1234567890",
+          "field": "hcp.npi",
+          "expected_value": "1234567890",
+          "expected": "API response contains correct NPI number",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "hcp_records",
+          "column": "npi",
+          "condition": "= '1234567890'",
+          "expected": "Database contains record with NPI 1234567890",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "positive",
+      "scenario_text": "User enters valid NPI number '1234567890', clicks 'Search', and sees HCP details page with correct information",
+      "focus_area": "security"
+    },
+    {
+      "name": "test_registration_valid_e2e",
+      "description": "User registers a new account and system validates UI, API, and database for successful registration",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/register",
+          "expected": "Registration page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "jane.doe@example.com",
+          "expected": "Email field populated with jane.doe@example.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "SecurePass123!",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Confirm Password",
+          "value": "SecurePass123!",
+          "expected": "Confirm Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Register",
+          "expected": "Registration form submitted, processing indicator appears",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Registration successful",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/register",
+          "expected_status": 201,
+          "expected": "API returns 201 Created with user details",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/register",
+          "field": "user.email",
+          "expected_value": "jane.doe@example.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "email",
+          "condition": "= 'jane.doe@example.com'",
+          "expected": "User record exists in database",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "status",
+          "condition": "= 'active' WHERE email = 'jane.doe@example.com'",
+          "expected": "User status is active in database",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "edge_case",
+      "scenario_text": "User enters 254-character email and valid password 'Pass123!', system accepts and displays Dashboard successfully",
+      "focus_area": "security"
+    },
+    {
+      "name": "test_registration_valid_e2e",
+      "description": "User registers a new account and system validates UI, API, and database for successful registration",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/register",
+          "expected": "Registration page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "jane.doe@example.com",
+          "expected": "Email field populated with jane.doe@example.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "SecurePass123!",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Confirm Password",
+          "value": "SecurePass123!",
+          "expected": "Confirm Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Register",
+          "expected": "Registration form submitted, processing indicator appears",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Registration successful",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/register",
+          "expected_status": 201,
+          "expected": "API returns 201 Created with user details",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/register",
+          "field": "user.email",
+          "expected_value": "jane.doe@example.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "email",
+          "condition": "= 'jane.doe@example.com'",
+          "expected": "User record exists in database",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "status",
+          "condition": "= 'active' WHERE email = 'jane.doe@example.com'",
+          "expected": "User status is active in database",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "edge_case",
+      "scenario_text": "User clicks Login with only Email filled (no password), system shows 'Password is required' validation error",
+      "focus_area": "security"
+    },
+    {
+      "name": "test_registration_valid_e2e",
+      "description": "User registers a new account and system validates UI, API, and database for successful registration",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/register",
+          "expected": "Registration page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "jane.doe@example.com",
+          "expected": "Email field populated with jane.doe@example.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "SecurePass123!",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Confirm Password",
+          "value": "SecurePass123!",
+          "expected": "Confirm Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Register",
+          "expected": "Registration form submitted, processing indicator appears",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Registration successful",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/register",
+          "expected_status": 201,
+          "expected": "API returns 201 Created with user details",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/register",
+          "field": "user.email",
+          "expected_value": "jane.doe@example.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "email",
+          "condition": "= 'jane.doe@example.com'",
+          "expected": "User record exists in database",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "status",
+          "condition": "= 'active' WHERE email = 'jane.doe@example.com'",
+          "expected": "User status is active in database",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "edge_case",
+      "scenario_text": "User enters email 'user+tag@domain.com' (with plus sign) and password 'Valid123!', system accepts and logs in successfully",
+      "focus_area": "security"
+    },
+    {
+      "name": "test_login_sql_injection_blocked",
+      "description": "Security test: SQL injection attempt is sanitized, login blocked, and security event logged",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/login",
+          "expected": "Login page loads",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "admin' OR '1'='1' --",
+          "expected": "Malicious input entered in email field",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "anypassword",
+          "expected": "Password field populated",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Login",
+          "expected": "Login attempt submitted",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Invalid email format",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/auth/login",
+          "expected_status": 400,
+          "expected": "API rejects malicious input with 400 Bad Request",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/auth/login",
+          "field": "error",
+          "expected_value": "Invalid email format",
+          "expected": "API error message confirms input validation",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "security_logs",
+          "column": "event_type",
+          "condition": "= 'sql_injection_attempt' ORDER BY created_at DESC LIMIT 1",
+          "expected": "Security event logged with SQL injection attempt details",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "negative",
+      "scenario_text": "User enters SQL injection 'admin' OR '1'='1' -- in email field, system shows 'Invalid email format' and blocks login",
+      "focus_area": "security"
+    },
+    {
+      "name": "test_login_invalid_credentials",
+      "description": "User attempts to log in with incorrect password and system displays an error message",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/login",
+          "expected": "Login page loads",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "test@test.com",
+          "expected": "Email field populated with test@test.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "WrongPass",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Login",
+          "expected": "Login attempt submitted",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Invalid credentials",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/auth/login",
+          "expected_status": 401,
+          "expected": "API returns 401 Unauthorized for invalid credentials",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/auth/login",
+          "field": "error",
+          "expected_value": "Invalid credentials",
+          "expected": "API response contains error message for invalid credentials",
+          "layer": "API"
+        }
+      ],
+      "scenario_type": "negative",
+      "scenario_text": "User enters wrong password 'WrongPass' for email 'test@test.com', system shows 'Invalid credentials' error",
+      "focus_area": "security"
+    },
+    {
+      "name": "test_login_empty_fields",
+      "description": "User attempts to log in with empty email and password fields, expecting validation errors",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/login",
+          "expected": "Login page loads",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "",
+          "expected": "Email field left empty",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "",
+          "expected": "Password field left empty",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Login",
+          "expected": "Login attempt submitted with empty fields",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Email and Password are required",
+          "layer": "UI"
+        }
+      ],
+      "scenario_type": "negative",
+      "scenario_text": "User leaves both fields empty and clicks Login, system shows 'Email and Password are required' validation error",
+      "focus_area": "security"
+    },
+    {
+      "name": "test_login_valid_e2e",
+      "description": "User logs in with valid credentials and system validates UI, API session, and database login timestamp",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/login",
+          "expected": "Login page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "doctor.jane@healthcare.com",
+          "expected": "Email field populated with doctor.jane@healthcare.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "SecurePass123!",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Login",
+          "expected": "Login form submitted, redirect initiated",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Welcome, Dr. Jane",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/auth/session",
+          "expected_status": 200,
+          "expected": "Session API returns 200 with valid user_id and token",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/auth/session",
+          "field": "user.email",
+          "expected_value": "doctor.jane@healthcare.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "last_login",
+          "condition": "IS NOT NULL WHERE email = 'doctor.jane@healthcare.com'",
+          "expected": "Database shows last_login timestamp updated within last 10 seconds",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "login_count",
+          "condition": "> 0 WHERE email = 'doctor.jane@healthcare.com'",
+          "expected": "Login count incremented by 1",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "positive",
+      "scenario_text": "User logs in with email 'doctor.jane@healthcare.com' and password 'SecurePass123!', sees 'Welcome, Dr. Jane' message on Dashboard",
+      "focus_area": "ux"
+    },
+    {
+      "name": "test_login_valid_admin",
+      "description": "User authenticates with valid admin credentials and system validates UI, API session, and database login timestamp",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/login",
+          "expected": "Login page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "admin@hospital.com",
+          "expected": "Email field populated with admin@hospital.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "Admin@2024",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Login",
+          "expected": "Login form submitted, redirect initiated",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "User profile icon",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/auth/session",
+          "expected_status": 200,
+          "expected": "Session API returns 200 with valid user_id and token",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/auth/session",
+          "field": "user.email",
+          "expected_value": "admin@hospital.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "last_login",
+          "condition": "IS NOT NULL WHERE email = 'admin@hospital.com'",
+          "expected": "Database shows last_login timestamp updated within last 10 seconds",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "login_count",
+          "condition": "> 0 WHERE email = 'admin@hospital.com'",
+          "expected": "Login count incremented by 1",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "positive",
+      "scenario_text": "User authenticates with email 'admin@hospital.com' and password 'Admin@2024', is redirected to /dashboard, and sees user profile icon",
+      "focus_area": "ux"
+    },
+    {
+      "name": "test_login_valid_hcp_specialist",
+      "description": "User logs in with valid credentials and system validates UI, API session, and database login timestamp",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/login",
+          "expected": "Login page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "hcp.specialist@domain.org",
+          "expected": "Email field populated with hcp.specialist@domain.org",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "Specialist!Pass99",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Login",
+          "expected": "Login form submitted, redirect initiated",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Dashboard",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/auth/session",
+          "expected_status": 200,
+          "expected": "Session API returns 200 with valid user_id and token",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/auth/session",
+          "field": "user.email",
+          "expected_value": "hcp.specialist@domain.org",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "last_login",
+          "condition": "IS NOT NULL WHERE email = 'hcp.specialist@domain.org'",
+          "expected": "Database shows last_login timestamp updated within last 10 seconds",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "positive",
+      "scenario_text": "User logs in with email 'hcp.specialist@domain.org' and password 'Specialist!Pass99', session cookie is set, and last login timestamp updates",
+      "focus_area": "ux"
+    },
+    {
+      "name": "test_filter_cardiology_specialty",
+      "description": "User filters by medical specialty 'Cardiology' and validates UI results, API response, and database query execution",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/specialty-search",
+          "expected": "Specialty search page loads with filter options visible",
+          "layer": "UI"
+        },
+        {
+          "action": "select",
+          "target": "Specialty dropdown",
+          "value": "Cardiology",
+          "expected": "Specialty dropdown populated with 'Cardiology'",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Apply Filters",
+          "expected": "Filter applied, loading indicator appears",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Cardiologists",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_element",
+          "target": "NPI column",
+          "expected": "NPI numbers visible in results table",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/specialty-search?specialty=Cardiology",
+          "expected_status": 200,
+          "expected": "Specialty search API returns 200 with matching cardiologist records",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/specialty-search?specialty=Cardiology",
+          "field": "results[0].specialty",
+          "expected_value": "Cardiology",
+          "expected": "First result contains 'Cardiology' in specialty field",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db_count",
+          "table": "doctors",
+          "condition": "WHERE specialty = 'Cardiology'",
+          "expected": "Database returns count > 0 matching cardiology specialty",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "positive",
+      "scenario_text": "User selects medical specialty 'Cardiology', applies filter, and sees list of cardiologists with NPI numbers displayed",
+      "focus_area": "ux"
+    },
+    {
+      "name": "test_apply_segment_filter_top_performers",
+      "description": "User applies segment filter 'Top Performers', sees filtered list of HCPs, and API returns 200 with matching data",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/hcps",
+          "expected": "HCPs page loads with filter options visible",
+          "layer": "UI"
+        },
+        {
+          "action": "select",
+          "target": "Segment Filter",
+          "value": "Top Performers",
+          "expected": "Segment filter set to 'Top Performers'",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Apply Filters",
+          "expected": "Filter applied, loading indicator appears",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Top Performers",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_element",
+          "target": "HCP List",
+          "expected": "Filtered list of HCPs visible",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/hcps?segment=Top%20Performers",
+          "expected_status": 200,
+          "expected": "API returns 200 with HCPs matching 'Top Performers' segment",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/hcps?segment=Top%20Performers",
+          "field": "results[0].segment",
+          "expected_value": "Top Performers",
+          "expected": "First result contains 'Top Performers' in segment field",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db_count",
+          "table": "hcps",
+          "condition": "WHERE segment = 'Top Performers'",
+          "expected": "Database returns count > 0 matching 'Top Performers' segment",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "positive",
+      "scenario_text": "User applies segment filter 'Top Performers', sees filtered list of HCPs, and API returns 200 with matching data",
+      "focus_area": "ux"
+    },
+    {
+      "name": "test_forgot_password_email_sent",
+      "description": "User requests a password reset and receives a confirmation email",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/login",
+          "expected": "Login page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Forgot Password?",
+          "expected": "Forgot Password page loads",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "doctor.jane@healthcare.com",
+          "expected": "Email field populated with doctor.jane@healthcare.com",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Submit",
+          "expected": "Password reset request submitted",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "A password reset email has been sent to doctor.jane@healthcare.com",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/password-reset",
+          "expected_status": 200,
+          "expected": "Password reset API returns 200 with success message",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/password-reset",
+          "field": "email",
+          "expected_value": "doctor.jane@healthcare.com",
+          "expected": "API response confirms email sent to doctor.jane@healthcare.com",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "password_reset_requests",
+          "column": "email",
+          "condition": "= 'doctor.jane@healthcare.com' ORDER BY request_time DESC LIMIT 1",
+          "expected": "Database logs password reset request for doctor.jane@healthcare.com",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "positive",
+      "scenario_text": "User clicks 'Forgot Password?', enters email 'doctor.jane@healthcare.com', and receives password reset email",
+      "focus_area": "ux"
+    },
+    {
+      "name": "test_tab_navigation_keyboard_shortcuts",
+      "description": "User navigates through application tabs using keyboard shortcuts and experiences seamless transitions between segments and specialties.",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/dashboard",
+          "expected": "Dashboard page loads with tabs visible",
+          "layer": "UI"
+        },
+        {
+          "action": "wait",
+          "target": "Segments Tab",
+          "expected": "Segments tab is visible and ready for interaction",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Segments content is displayed",
+          "layer": "UI"
+        },
+        {
+          "action": "wait",
+          "target": "Specialties Tab",
+          "expected": "Specialties tab is visible and ready for interaction",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Specialties content is displayed",
+          "layer": "UI"
+        }
+      ],
+      "scenario_type": "positive",
+      "scenario_text": "User navigates through tabs using keyboard shortcuts, sees seamless transition between segments and specialties",
+      "focus_area": "ux"
+    },
+    {
+      "name": "test_login_autofill_success",
+      "description": "User logs in using browser autofill for credentials and system validates UI, API session, and database login timestamp.",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/login",
+          "expected": "Login page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "autofill",
+          "expected": "Email field populated using browser autofill",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "autofill",
+          "expected": "Password field populated using browser autofill",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Login",
+          "expected": "Login form submitted, redirect initiated",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Welcome",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/auth/session",
+          "expected_status": 200,
+          "expected": "Session API returns 200 with valid user_id and token",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/auth/session",
+          "field": "user.email",
+          "expected_value": "autofilled_email@example.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "last_login",
+          "condition": "IS NOT NULL WHERE email = 'autofilled_email@example.com'",
+          "expected": "Database shows last_login timestamp updated within last 10 seconds",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "login_count",
+          "condition": "> 0 WHERE email = 'autofilled_email@example.com'",
+          "expected": "Login count incremented by 1",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "positive",
+      "scenario_text": "User uses browser autofill for login credentials, logs in successfully, and sees 'Welcome' message",
+      "focus_area": "ux"
+    },
+    {
+      "name": "test_logout_session_expired",
+      "description": "User logs out, attempts to navigate back, and is redirected to login page with 'Session expired' message",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/dashboard",
+          "expected": "Dashboard page loads",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Logout",
+          "expected": "User is logged out and redirected to login page",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Login",
+          "layer": "UI"
+        },
+        {
+          "action": "navigate",
+          "target": "browser_back",
+          "expected": "Attempt to navigate back to dashboard",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Session expired",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/auth/session",
+          "expected_status": 401,
+          "expected": "API returns 401 Unauthorized for expired session",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "sessions",
+          "column": "status",
+          "condition": "= 'expired' WHERE user_id = (SELECT id FROM users WHERE email = 'user@example.com')",
+          "expected": "Session status updated to expired in database",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "positive",
+      "scenario_text": "User logs out, clicks browser back button, and is redirected to login page with 'Session expired' message",
+      "focus_area": "ux"
+    },
+    {
+      "name": "test_filter_all_specialties",
+      "description": "User selects 'All Specialties', applies filters, and sees a complete list of HCPs with specialties",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/hcps",
+          "expected": "HCPs page loads with filter options visible",
+          "layer": "UI"
+        },
+        {
+          "action": "select",
+          "target": "Specialties dropdown",
+          "value": "All Specialties",
+          "expected": "'All Specialties' option selected",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Apply Filters",
+          "expected": "Filters applied, loading indicator appears",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_element",
+          "target": "HCPs list",
+          "expected": "Complete list of HCPs with specialties displayed",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/hcps?specialty=all",
+          "expected_status": 200,
+          "expected": "API returns 200 with all HCPs data",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/hcps?specialty=all",
+          "field": "results[0].specialty",
+          "expected_value": "exists",
+          "expected": "First result contains a specialty field",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db_count",
+          "table": "hcps",
+          "condition": "WHERE specialty IS NOT NULL",
+          "expected": "Database returns count > 0 for HCPs with specialties",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "positive",
+      "scenario_text": "User selects 'All Specialties', clicks 'Apply Filters', and sees complete list of HCPs with specialties",
+      "focus_area": "ux"
+    },
+    {
+      "name": "test_export_to_excel",
+      "description": "User exports data to Excel, verifies file download and data integrity with PII masked",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/data",
+          "expected": "Data page loads with export options visible",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Export to Excel",
+          "expected": "Export process initiated, download prompt appears",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_element",
+          "target": "Download prompt",
+          "expected": "Download prompt visible with Excel file option",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "File downloaded successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/export/excel",
+          "expected_status": 200,
+          "expected": "Export API returns 200 with file download link",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "exports",
+          "column": "status",
+          "condition": "= 'completed' WHERE user_id = 'current_user_id'",
+          "expected": "Database records export completion status",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db_value",
+          "table": "exports",
+          "column": "file_name",
+          "condition": "LIKE '%.xlsx' WHERE user_id = 'current_user_id'",
+          "expected": "Database records correct file type exported",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "positive",
+      "scenario_text": "User clicks 'Export to Excel', file downloads successfully, and contains all visible data with PII masked",
+      "focus_area": "ux"
+    },
+    {
+      "name": "test_registration_valid_e2e",
+      "description": "User registers a new account and system validates UI, API response, and database entry",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/register",
+          "expected": "Registration page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "new.user@example.com",
+          "expected": "Email field populated with new.user@example.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "NewUserPass123!",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Confirm Password",
+          "value": "NewUserPass123!",
+          "expected": "Confirm Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Register",
+          "expected": "Registration form submitted, processing begins",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Registration successful",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/register",
+          "expected_status": 201,
+          "expected": "API returns 201 Created with user details",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/register",
+          "field": "user.email",
+          "expected_value": "new.user@example.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "email",
+          "condition": "= 'new.user@example.com'",
+          "expected": "Database contains new user record with correct email",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "status",
+          "condition": "= 'pending_confirmation' WHERE email = 'new.user@example.com'",
+          "expected": "User status is pending confirmation in database",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "edge_case",
+      "scenario_text": "User enters maximum length email (254 characters) and valid password 'Pass123!', system accepts and displays Dashboard successfully",
+      "focus_area": "ux"
+    },
+    {
+      "name": "test_registration_valid_e2e",
+      "description": "User registers a new account and system validates UI, API response, and database entry",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/register",
+          "expected": "Registration page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "new.user@example.com",
+          "expected": "Email field populated with new.user@example.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "NewUserPass123!",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Confirm Password",
+          "value": "NewUserPass123!",
+          "expected": "Confirm Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Register",
+          "expected": "Registration form submitted, processing begins",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Registration successful",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/register",
+          "expected_status": 201,
+          "expected": "API returns 201 Created with user details",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/register",
+          "field": "user.email",
+          "expected_value": "new.user@example.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "email",
+          "condition": "= 'new.user@example.com'",
+          "expected": "Database contains new user record with correct email",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "status",
+          "condition": "= 'pending_confirmation' WHERE email = 'new.user@example.com'",
+          "expected": "User status is pending confirmation in database",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "edge_case",
+      "scenario_text": "User clicks Login with only Email filled (no password), system shows 'Password is required' validation error",
+      "focus_area": "ux"
+    },
+    {
+      "name": "test_registration_valid_e2e",
+      "description": "User registers a new account and system validates UI, API response, and database entry",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/register",
+          "expected": "Registration page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "new.user@example.com",
+          "expected": "Email field populated with new.user@example.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "NewUserPass123!",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Confirm Password",
+          "value": "NewUserPass123!",
+          "expected": "Confirm Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Register",
+          "expected": "Registration form submitted, processing begins",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Registration successful",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/register",
+          "expected_status": 201,
+          "expected": "API returns 201 Created with user details",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/register",
+          "field": "user.email",
+          "expected_value": "new.user@example.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "email",
+          "condition": "= 'new.user@example.com'",
+          "expected": "Database contains new user record with correct email",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "status",
+          "condition": "= 'pending_confirmation' WHERE email = 'new.user@example.com'",
+          "expected": "User status is pending confirmation in database",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "edge_case",
+      "scenario_text": "User enters email 'user+tag@domain.com' (with plus sign) and password 'Valid123!', system accepts and logs in successfully",
+      "focus_area": "ux"
+    },
+    {
+      "name": "test_registration_valid_e2e",
+      "description": "User registers a new account and system validates UI, API response, and database entry",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/register",
+          "expected": "Registration page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "new.user@example.com",
+          "expected": "Email field populated with new.user@example.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "NewUserPass123!",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Confirm Password",
+          "value": "NewUserPass123!",
+          "expected": "Confirm Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Register",
+          "expected": "Registration form submitted, processing begins",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Registration successful",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/register",
+          "expected_status": 201,
+          "expected": "API returns 201 Created with user details",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/register",
+          "field": "user.email",
+          "expected_value": "new.user@example.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "email",
+          "condition": "= 'new.user@example.com'",
+          "expected": "Database contains new user record with correct email",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "status",
+          "condition": "= 'pending_confirmation' WHERE email = 'new.user@example.com'",
+          "expected": "User status is pending confirmation in database",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "edge_case",
+      "scenario_text": "User enters special characters in search field 'O'Brien-Smith', sees matching results displayed correctly",
+      "focus_area": "ux"
+    },
+    {
+      "name": "test_registration_valid_e2e",
+      "description": "User registers a new account and system validates UI, API response, and database entry",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/register",
+          "expected": "Registration page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "new.user@example.com",
+          "expected": "Email field populated with new.user@example.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "NewUserPass123!",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Confirm Password",
+          "value": "NewUserPass123!",
+          "expected": "Confirm Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Register",
+          "expected": "Registration form submitted, processing begins",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Registration successful",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/register",
+          "expected_status": 201,
+          "expected": "API returns 201 Created with user details",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/register",
+          "field": "user.email",
+          "expected_value": "new.user@example.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "email",
+          "condition": "= 'new.user@example.com'",
+          "expected": "Database contains new user record with correct email",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "status",
+          "condition": "= 'pending_confirmation' WHERE email = 'new.user@example.com'",
+          "expected": "User status is pending confirmation in database",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "edge_case",
+      "scenario_text": "User applies all filters simultaneously (Specialty: 'Neurology', Segment: 'Active'), sees combined results",
+      "focus_area": "ux"
+    },
+    {
+      "name": "test_registration_valid_e2e",
+      "description": "User registers a new account and system validates UI, API response, and database entry",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/register",
+          "expected": "Registration page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "new.user@example.com",
+          "expected": "Email field populated with new.user@example.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "NewUserPass123!",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Confirm Password",
+          "value": "NewUserPass123!",
+          "expected": "Confirm Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Register",
+          "expected": "Registration form submitted, processing begins",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Registration successful",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/register",
+          "expected_status": 201,
+          "expected": "API returns 201 Created with user details",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/register",
+          "field": "user.email",
+          "expected_value": "new.user@example.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "email",
+          "condition": "= 'new.user@example.com'",
+          "expected": "Database contains new user record with correct email",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "status",
+          "condition": "= 'pending_confirmation' WHERE email = 'new.user@example.com'",
+          "expected": "User status is pending confirmation in database",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "edge_case",
+      "scenario_text": "User enters 100-character search term, clicks Apply, system processes without error showing results or 'No matches'",
+      "focus_area": "ux"
+    },
+    {
+      "name": "test_registration_valid_e2e",
+      "description": "User registers a new account and system validates UI, API response, and database entry",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/register",
+          "expected": "Registration page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "new.user@example.com",
+          "expected": "Email field populated with new.user@example.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "NewUserPass123!",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Confirm Password",
+          "value": "NewUserPass123!",
+          "expected": "Confirm Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Register",
+          "expected": "Registration form submitted, processing begins",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Registration successful",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/register",
+          "expected_status": 201,
+          "expected": "API returns 201 Created with user details",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/register",
+          "field": "user.email",
+          "expected_value": "new.user@example.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "email",
+          "condition": "= 'new.user@example.com'",
+          "expected": "Database contains new user record with correct email",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "status",
+          "condition": "= 'pending_confirmation' WHERE email = 'new.user@example.com'",
+          "expected": "User status is pending confirmation in database",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "edge_case",
+      "scenario_text": "User rapidly clicks 'Login' button twice, system prevents duplicate submission and shows 'Already processing' message",
+      "focus_area": "ux"
+    },
+    {
+      "name": "test_registration_valid_e2e",
+      "description": "User registers a new account and system validates UI, API response, and database entry",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/register",
+          "expected": "Registration page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "new.user@example.com",
+          "expected": "Email field populated with new.user@example.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "NewUserPass123!",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Confirm Password",
+          "value": "NewUserPass123!",
+          "expected": "Confirm Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Register",
+          "expected": "Registration form submitted, processing begins",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Registration successful",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/register",
+          "expected_status": 201,
+          "expected": "API returns 201 Created with user details",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/register",
+          "field": "user.email",
+          "expected_value": "new.user@example.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "email",
+          "condition": "= 'new.user@example.com'",
+          "expected": "Database contains new user record with correct email",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "status",
+          "condition": "= 'pending_confirmation' WHERE email = 'new.user@example.com'",
+          "expected": "User status is pending confirmation in database",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "edge_case",
+      "scenario_text": "User navigates to page 10 with only 3 records, sees 3 records displayed and pagination shows 'Page 10 of 10'",
+      "focus_area": "ux"
+    },
+    {
+      "name": "test_registration_valid_e2e",
+      "description": "User registers a new account and system validates UI, API response, and database entry",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/register",
+          "expected": "Registration page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "new.user@example.com",
+          "expected": "Email field populated with new.user@example.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "NewUserPass123!",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Confirm Password",
+          "value": "NewUserPass123!",
+          "expected": "Confirm Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Register",
+          "expected": "Registration form submitted, processing begins",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Registration successful",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/register",
+          "expected_status": 201,
+          "expected": "API returns 201 Created with user details",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/register",
+          "field": "user.email",
+          "expected_value": "new.user@example.com",
+          "expected": "API response contains correct user email",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "email",
+          "condition": "= 'new.user@example.com'",
+          "expected": "Database contains new user record with correct email",
+          "layer": "DB"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "status",
+          "condition": "= 'pending_confirmation' WHERE email = 'new.user@example.com'",
+          "expected": "User status is pending confirmation in database",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "edge_case",
+      "scenario_text": "User refreshes page while data is loading, previous request cancels and new data loads",
+      "focus_area": "ux"
+    },
+    {
+      "name": "test_login_sql_injection_blocked",
+      "description": "Security test: SQL injection attempt is sanitized, login blocked, and security event logged",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/login",
+          "expected": "Login page loads",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "admin' OR '1'='1' --",
+          "expected": "Malicious input entered in email field",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "anypassword",
+          "expected": "Password field populated",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Login",
+          "expected": "Login attempt submitted",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Invalid email format",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/auth/login",
+          "expected_status": 400,
+          "expected": "API rejects malicious input with 400 Bad Request",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/auth/login",
+          "field": "error",
+          "expected_value": "Invalid email format",
+          "expected": "API error message confirms input validation",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "security_logs",
+          "column": "event_type",
+          "condition": "= 'sql_injection_attempt' ORDER BY created_at DESC LIMIT 1",
+          "expected": "Security event logged with SQL injection attempt details",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "negative",
+      "scenario_text": "User enters SQL injection 'admin' OR '1'='1' -- in email field, system shows 'Invalid email format' and blocks login",
+      "focus_area": "ux"
+    },
+    {
+      "name": "test_login_invalid_credentials",
+      "description": "User attempts to log in with incorrect password, system displays error message and no session is created",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/login",
+          "expected": "Login page loads",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "test@test.com",
+          "expected": "Email field populated with test@test.com",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "WrongPass",
+          "expected": "Password field populated (masked)",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Login",
+          "expected": "Login attempt submitted",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Invalid credentials",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/auth/login",
+          "expected_status": 401,
+          "expected": "API returns 401 Unauthorized for invalid credentials",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/auth/login",
+          "field": "error",
+          "expected_value": "Invalid credentials",
+          "expected": "API response contains error message for invalid credentials",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "users",
+          "column": "last_login",
+          "condition": "IS NULL WHERE email = 'test@test.com'",
+          "expected": "No update to last_login timestamp for failed login attempt",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "negative",
+      "scenario_text": "User enters wrong password 'WrongPass' for email 'test@test.com', system shows 'Invalid credentials' error",
+      "focus_area": "ux"
+    },
+    {
+      "name": "test_login_empty_fields",
+      "description": "User attempts to log in with empty email and password fields, expecting validation errors",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/login",
+          "expected": "Login page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "",
+          "expected": "Email field left empty",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Password",
+          "value": "",
+          "expected": "Password field left empty",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Login",
+          "expected": "Login attempt submitted with empty fields",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Email and Password are required",
+          "layer": "UI"
+        }
+      ],
+      "scenario_type": "negative",
+      "scenario_text": "User leaves both fields empty and clicks Login, system shows 'Email and Password are required' validation error",
+      "focus_area": "ux"
+    },
+    {
+      "name": "test_search_non_existent_item",
+      "description": "User searches for a non-existent item and system displays 'No results found' message",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/search",
+          "expected": "Search page loads with filters visible",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Search by name",
+          "value": "XYZ123NonExistent",
+          "expected": "Search field populated with XYZ123NonExistent",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Apply Filters",
+          "expected": "Search executed, loading indicator appears",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "No results found. Try adjusting filters",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/search?name=XYZ123NonExistent",
+          "expected_status": 200,
+          "expected": "Search API returns 200 with empty results",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/search?name=XYZ123NonExistent",
+          "field": "results",
+          "expected_value": "[]",
+          "expected": "API response contains empty results array",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db_count",
+          "table": "items",
+          "condition": "WHERE name LIKE '%XYZ123NonExistent%'",
+          "expected": "Database returns count = 0 matching search criteria",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "negative",
+      "scenario_text": "User searches for non-existent item 'XYZ123NonExistent', clicks Apply, sees 'No results found. Try adjusting filters'",
+      "focus_area": "ux"
+    },
+    {
+      "name": "test_search_sql_injection_blocked",
+      "description": "Security test: SQL injection attempt in search is sanitized, no results returned, and security event logged",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/search",
+          "expected": "Search page loads with filters visible",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Search by name",
+          "value": "Product' OR '1'='1'",
+          "expected": "Malicious input entered in search field",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Apply Filters",
+          "expected": "Search attempt submitted, loading indicator appears",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "No results found",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/search?name=Product' OR '1'='1'",
+          "expected_status": 200,
+          "expected": "API returns 200 with no matching records",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/search?name=Product' OR '1'='1'",
+          "field": "results",
+          "expected_value": "[]",
+          "expected": "API response contains empty results array",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "security_logs",
+          "column": "event_type",
+          "condition": "= 'sql_injection_attempt' ORDER BY created_at DESC LIMIT 1",
+          "expected": "Security event logged with SQL injection attempt details",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "negative",
+      "scenario_text": "User attempts SQL injection in search 'Product' OR '1'='1', system sanitizes input and returns safe 'No results found'",
+      "focus_area": "ux"
+    },
+    {
+      "name": "test_search_no_criteria",
+      "description": "User attempts to search without entering any criteria and system handles it by showing all records or prompting for criteria",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/search",
+          "expected": "Search page loads with filters visible",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Apply Filters",
+          "expected": "Search executed without criteria",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Please enter search criteria",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_element",
+          "target": "Results Table",
+          "expected": "All records displayed in results table",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/search",
+          "expected_status": 200,
+          "expected": "Search API returns 200 with all records",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db_count",
+          "table": "items",
+          "condition": "",
+          "expected": "Database returns count > 0 for all records",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "negative",
+      "scenario_text": "User clicks Apply without entering any criteria, system shows all records or 'Please enter search criteria' message",
+      "focus_area": "ux"
+    },
+    {
+      "name": "test_save_without_name",
+      "description": "User attempts to save without entering a required Name field and system shows validation error",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/form",
+          "expected": "Form page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Name",
+          "value": "",
+          "expected": "Name field left empty",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Save",
+          "expected": "Save button clicked, form submission attempted",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Name is required",
+          "layer": "UI"
+        }
+      ],
+      "scenario_type": "negative",
+      "scenario_text": "User leaves required Name field empty, clicks Save, and sees 'Name is required' validation error",
+      "focus_area": "ux"
+    },
+    {
+      "name": "test_invalid_email_error",
+      "description": "User enters an invalid email and system displays an error message",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/profile",
+          "expected": "Profile page loads",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Email",
+          "value": "notanemail",
+          "expected": "Email field populated with invalid email",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Save",
+          "expected": "Save button clicked, form submitted",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Please enter valid email address",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/profile/update",
+          "expected_status": 400,
+          "expected": "API returns 400 Bad Request due to invalid email format",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/profile/update",
+          "field": "error",
+          "expected_value": "Invalid email format",
+          "expected": "API error message confirms invalid email format",
+          "layer": "API"
+        }
+      ],
+      "scenario_type": "negative",
+      "scenario_text": "User enters invalid email 'notanemail', clicks Save, and sees 'Please enter valid email address' error",
+      "focus_area": "ux"
+    },
+    {
+      "name": "test_negative_amount_validation",
+      "description": "User enters a negative amount and system validates UI error message and API response",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/transaction",
+          "expected": "Transaction page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "fill",
+          "target": "Amount",
+          "value": "-50",
+          "expected": "Amount field populated with -50",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Save",
+          "expected": "Save button clicked, form submitted",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Amount must be positive",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/transaction/save",
+          "expected_status": 400,
+          "expected": "API returns 400 Bad Request for negative amount",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/transaction/save",
+          "field": "error",
+          "expected_value": "Amount must be positive",
+          "expected": "API response contains correct error message",
+          "layer": "API"
+        }
+      ],
+      "scenario_type": "negative",
+      "scenario_text": "User enters negative Amount '-50', clicks Save, and sees 'Amount must be positive' validation error",
+      "focus_area": "ux"
+    },
+    {
+      "name": "test_delete_already_deleted_record",
+      "description": "User attempts to delete a record that has already been deleted, and the system shows a 'Record not found' error",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/records",
+          "expected": "Records page loads with list of records",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Delete",
+          "expected": "Delete action initiated for the selected record",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Record not found",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/records/delete",
+          "expected_status": 404,
+          "expected": "API returns 404 Not Found for already deleted record",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/records/delete",
+          "field": "error",
+          "expected_value": "Record not found",
+          "expected": "API response contains 'Record not found' error message",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "records",
+          "column": "id",
+          "condition": "IS NULL WHERE id = 'record_id'",
+          "expected": "Database confirms record does not exist",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "negative",
+      "scenario_text": "User clicks 'Delete' on already-deleted record, system shows 'Record not found' error",
+      "focus_area": "ux"
+    },
+    {
+      "name": "test_edit_record_without_permission",
+      "description": "User attempts to edit a record without sufficient permissions and receives an 'Access denied' message.",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/records",
+          "expected": "Records page loads successfully",
+          "layer": "UI"
+        },
+        {
+          "action": "click",
+          "target": "Edit Record",
+          "expected": "Edit attempt initiated",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Access denied",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/records/edit",
+          "expected_status": 403,
+          "expected": "API returns 403 Forbidden due to insufficient permissions",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/records/edit",
+          "field": "error",
+          "expected_value": "Access denied",
+          "expected": "API response contains 'Access denied' error message",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "audit_logs",
+          "column": "action",
+          "condition": "= 'edit_attempt' AND user_id = 'current_user_id' ORDER BY timestamp DESC LIMIT 1",
+          "expected": "Audit log entry created for unauthorized edit attempt",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "negative",
+      "scenario_text": "User tries to edit record without permission, sees 'Access denied' message",
+      "focus_area": "ux"
+    },
+    {
+      "name": "test_invalid_page_navigation",
+      "description": "User attempts to navigate to a non-existent page number and system handles the error gracefully",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "url",
+          "value": "https://app.example.com/page/999",
+          "expected": "Attempt to load page 999",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_text",
+          "expected": "Invalid page",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_element",
+          "target": "Pagination",
+          "expected": "Redirects to last available page (page 10)",
+          "layer": "UI"
+        },
+        {
+          "action": "verify_api",
+          "endpoint": "/api/pages/999",
+          "expected_status": 404,
+          "expected": "API returns 404 Not Found for non-existent page",
+          "layer": "API"
+        },
+        {
+          "action": "verify_api_field",
+          "endpoint": "/api/pages/999",
+          "field": "error",
+          "expected_value": "Page not found",
+          "expected": "API response contains error message for invalid page",
+          "layer": "API"
+        },
+        {
+          "action": "verify_db",
+          "table": "page_requests",
+          "column": "status",
+          "condition": "= 'invalid' WHERE page_number = 999",
+          "expected": "Database logs invalid page request",
+          "layer": "DB"
+        }
+      ],
+      "scenario_type": "negative",
+      "scenario_text": "User navigates to invalid page number (page 999 when only 10 pages exist), sees 'Invalid page' error or redirects to last page",
+      "focus_area": "ux"
+    }
+  ],
+  "summary": {
+    "total_test_cases": 67,
+    "authentication": 24,
+    "security": 11,
+    "ux": 32
+  }
+}

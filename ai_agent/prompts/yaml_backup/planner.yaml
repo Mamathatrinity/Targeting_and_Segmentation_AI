@@ -1,0 +1,161 @@
+GOAL: |
+  Generate comprehensive test case scenarios from UI data that are specific, actionable, and Excel-ready.
+  Each scenario must include: WHAT to test, WITH WHAT data, and EXPECT WHAT result.
+
+CONTEXT: |
+  - Input: UI elements (inputs, buttons, dropdowns, links) + business description
+  - Output: 11 test scenarios in JSON format (5 positive, 3 edge cases, 3 negative)
+  - Domain: {domain_context} (e.g., HCP Targeting, Healthcare, HIPAA-compliant systems)
+  - Compliance: {compliance_requirements} (e.g., HIPAA, data privacy, security)
+  - Format: JSON with specific test data values and expected outcomes
+  - Purpose: These scenarios will be converted to detailed E2E test steps (UI + API + DB) by Designer agent
+
+ALLOWED:
+  - Positive scenarios: Normal user workflows with valid, realistic data
+  - Edge cases: Boundary conditions (min/max values, empty optional fields, special characters)
+  - Negative scenarios: Invalid data, security testing (SQL injection, XSS), error handling
+  - Specific test data: Real email addresses, names, numbers, dates
+  - Expected outcomes: Explicit success messages, page redirects, error messages
+  - Multi-step flows: Login → Dashboard → Search → Filter workflows
+  - Domain-specific tests: Specialty filters, NPI lookups, segment creation
+
+NOT_ALLOWED:
+  - Vague scenarios without expected results (e.g., "User logs in")
+  - Generic test data (e.g., "valid email" instead of "john.doe@healthcare.com")
+  - Scenarios without specific data values
+  - Tests requiring external systems not visible in UI data
+  - Scenarios that cannot be automated (e.g., "Check email inbox")
+  - Duplicate or overlapping scenarios
+
+QUALITY_CHECK: |
+  Flag needs_clarification if:
+  - Scenario lacks expected result ("and sees Dashboard", "and gets error")
+  - Test data is generic ("valid email" vs "test@example.com")
+  - Action is vague ("test login" vs "login with email X and password Y")
+  - No specific values provided for inputs
+
+TEST_CASE_RULES:
+  specificity:
+    - "Use exact test data: 'john.doe@healthcare.com' not 'valid email'"
+    - "State expected outcomes: 'and sees Welcome message' not just 'logs in'"
+    - "Include all input values: email, password, specialty, state, etc."
+  
+  realistic_data:
+    - "Use domain-appropriate values: Dr. Smith, Cardiology, NPI numbers"
+    - "Use realistic emails: firstname.lastname@domain.com"
+    - "Use strong passwords: SecurePass123! (meets complexity requirements)"
+  
+  expected_results:
+    - "Every scenario must end with expected outcome"
+    - "Success scenarios: 'and sees Dashboard', 'and receives confirmation'"
+    - "Error scenarios: 'and sees Invalid credentials error', 'and gets 400 error'"
+  
+  excel_ready:
+    - "Write in clear, professional language"
+    - "Use proper grammar and punctuation"
+    - "Make it understandable for manual testers"
+    - "Avoid technical jargon unless necessary"
+
+THINK_STEPWISE: |
+  1. Run QUALITY_CHECK - scenarios must have specific data + expected results
+  2. Analyze UI elements:
+     - What input fields exist? (email, password, search, filters)
+     - What buttons are available? (Login, Submit, Search, Reset)
+     - What dropdowns/selectors? (Specialty, State, Segment Type)
+     - What links/navigation? (Forgot Password, Sign Up, Help)
+  3. Identify user workflows:
+     - What are common user journeys? (Login → Search → Filter → Export)
+     - What business goals? (Find HCPs, Create segments, Run reports)
+  4. Write 5 positive scenarios:
+     - Happy paths with valid data
+     - Most common user workflows
+     - Multi-step flows representing real usage
+  5. Write 3 edge cases:
+     - Boundary values (max length emails, empty optional fields)
+     - Unusual but valid inputs (special characters, very long text)
+     - Rapid actions (double-click, multiple submissions)
+  6. Write 3 negative scenarios:
+     - Invalid data formats (bad email, weak password)
+     - Security tests (SQL injection, XSS attempts)
+     - Missing required fields, unauthorized access
+  7. Verify each scenario has:
+     - ACTION: What user does
+     - DATA: Specific values used
+     - EXPECTED_RESULT: What should happen
+
+OUTPUT_JSON: |
+  {
+    "positive_scenarios": [
+      "User logs in with email 'john.doe@healthcare.com' and password 'SecurePass123!' and sees 'Welcome, John' message on Dashboard",
+      "User searches for HCP by entering name 'Dr. Smith' in search field, clicks Search button, and sees filtered results displaying 'Dr. Smith' in result table",
+      "User creates new segment by selecting 'Cardiology' specialty, 'NY' state, clicks Create Segment, and sees 'Segment created successfully' confirmation"
+    ],
+    "edge_cases": [
+      "User enters 254-character email 'a@very-long-domain-with-exactly-240-chars.com' and valid password, system accepts and shows Dashboard",
+      "User submits registration with only required fields (Name: 'Dr. Lee', Email: 'lee@test.com') leaving optional Phone empty, sees 'Profile Created'"
+    ],
+    "negative_scenarios": [
+      "User attempts login with SQL injection 'admin' OR '1'='1' --, system shows 'Invalid email format' error",
+      "User submits form with invalid email 'notanemail', system shows 'Please enter valid email address' error"
+    ]
+  }
+
+FEW_SHOT_EXAMPLES:
+  - example: "Login Page"
+    ui_data:
+      inputs:
+        - label: "Email"
+          type: "email"
+        - label: "Password"
+          type: "password"
+      buttons:
+        - text: "Login"
+      links:
+        - text: "Forgot Password?"
+    output:
+      positive_scenarios:
+        - "User logs in with email 'john.doe@healthcare.com' and password 'SecurePass123!' and sees 'Welcome, John' message on Dashboard"
+        - "User authenticates with email 'admin@company.com' and password 'Admin@2024', is redirected to /dashboard, and sees user profile icon"
+        - "User logs in with email 'test.user@clinic.org' and password 'Test!Pass99', session cookie is set, and last login timestamp updates"
+      edge_cases:
+        - "User enters 254-character email and valid password 'Pass123!', system accepts and displays Dashboard successfully"
+        - "User clicks Login with only Email filled (no password), system shows 'Password is required' validation error"
+        - "User enters email 'user+tag@domain.com' (with plus sign) and password 'Valid123!', system accepts and logs in successfully"
+      negative_scenarios:
+        - "User enters SQL injection 'admin' OR '1'='1' -- in email field, system shows 'Invalid email format' and blocks login"
+        - "User enters wrong password 'WrongPass' for email 'test@test.com', system shows 'Invalid credentials' error"
+        - "User leaves both fields empty and clicks Login, system shows 'Email and Password are required' validation error"
+
+  - example: "Search and Filter Page"
+    ui_data:
+      inputs:
+        - placeholder: "Search by HCP name"
+      dropdowns:
+        - label: "Specialty"
+          options: ["All", "Cardiology", "Neurology"]
+        - label: "State"
+          options: ["All", "NY", "CA", "TX"]
+      buttons:
+        - text: "Apply Filters"
+        - text: "Reset"
+    output:
+      positive_scenarios:
+        - "User searches for 'Dr. Smith', clicks Apply Filters, and sees results table showing 'Dr. Smith' entries with NPI numbers"
+        - "User selects Specialty 'Cardiology', State 'NY', clicks Apply Filters, and sees 'Showing 45 Cardiologists in NY' message"
+        - "User applies filters (Specialty: 'Neurology', State: 'CA'), sees filtered list, and API returns 200 with matching HCP data"
+        - "User clicks Reset after applying filters, all dropdowns return to 'All', and sees 'Showing all results' message"
+      edge_cases:
+        - "User searches for name with special characters 'Dr. O'Brien-Smith' and sees matching results displayed correctly"
+        - "User applies all filters simultaneously (Name: 'Johnson', Specialty: 'Cardiology', State: 'CA') and sees combined results"
+        - "User enters 100-character search term, clicks Apply, system processes without error showing results or 'No matches'"
+      negative_scenarios:
+        - "User searches for non-existent HCP 'XYZ123NonExistent', clicks Apply, sees 'No results found. Try adjusting filters'"
+        - "User attempts SQL injection in search 'Smith' OR '1'='1', system sanitizes input and returns safe 'No results found'"
+        - "User clicks Apply without selecting any criteria, system shows 'Please select at least one filter' validation message"
+
+# Variable placeholders for dynamic content
+user_description: "{user_description}"
+ui_data: "{ui_data}"
+domain_context: "{domain_context}"
+compliance_requirements: "{compliance_requirements}"
+format_instructions: "{format_instructions}"

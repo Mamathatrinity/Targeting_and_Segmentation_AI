@@ -17,6 +17,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'ai_agent'))
 
 from ai_agent.config import AIConfig
 from ai_agent.graph.workflow import run_workflow, run_multi_module_workflow
+from ai_agent.graph.enhanced_workflow import run_enhanced_workflow, run_enhanced_multi_module_workflow
 from ai_agent.config_loader import get_config
 from ai_agent.cost_tracker import get_cost_tracker
 
@@ -145,6 +146,11 @@ def main():
         action="store_true",
         help="Run single module mode (ignore config modules)"
     )
+    parser.add_argument(
+        "--enhanced",
+        action="store_true",
+        help="Use enhanced workflow with Strategy, Decision, Coverage, and Reporting"
+    )
     
     args = parser.parse_args()
     
@@ -175,9 +181,13 @@ def main():
             if not args.no_langfuse:
                 langfuse = setup_langfuse()
             
-            # Run single workflow
-            print("\nStarting workflow...\n")
-            results = run_workflow(args.url)
+            # Run workflow (enhanced or standard)
+            if args.enhanced:
+                print("\nStarting ENHANCED workflow...\n")
+                results = run_enhanced_workflow(args.url, module_name="test")
+            else:
+                print("\nStarting workflow...\n")
+                results = run_workflow(args.url)
             
         elif config.get_modules() and not args.single_module:
             # Multi-module mode from config
@@ -193,9 +203,13 @@ def main():
             if not args.no_langfuse and config.is_langfuse_enabled():
                 langfuse = setup_langfuse()
             
-            # Run multi-module workflow
-            print("\nStarting multi-module workflow...\n")
-            results = run_multi_module_workflow(modules, base_url)
+            # Run multi-module workflow (enhanced or standard)
+            if args.enhanced:
+                print("\nStarting ENHANCED multi-module workflow...\n")
+                results = run_enhanced_multi_module_workflow(modules, base_url)
+            else:
+                print("\nStarting multi-module workflow...\n")
+                results = run_multi_module_workflow(modules, base_url)
             
         else:
             print("\n❌ Error: No URL provided and no modules in config file")

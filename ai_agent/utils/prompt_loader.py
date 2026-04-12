@@ -36,11 +36,9 @@ def load_prompt(file_path: str) -> Dict[str, Any]:
     with open(path, 'r', encoding='utf-8') as f:
         prompt_data = yaml.safe_load(f)
     
-    # Validate required fields
-    required_fields = ['role', 'task']
-    for field in required_fields:
-        if field not in prompt_data:
-            raise ValueError(f"Prompt file missing required field '{field}': {path}")
+    # Validate prompt_data is not empty
+    if not prompt_data:
+        raise ValueError(f"Prompt file is empty: {path}")
     
     return prompt_data
 

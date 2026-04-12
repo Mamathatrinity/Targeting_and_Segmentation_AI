@@ -53,11 +53,6 @@ class AITestingWorkflow:
         workflow.add_node("executor", self._executor_node)
         workflow.add_node("validator", self._validator_node)
         
-        # New integrated agents (optional)
-        workflow.add_node("ui_automation", self._ui_automation_node)
-        workflow.add_node("api_testing", self._api_testing_node)
-        workflow.add_node("data_validation", self._data_validation_node)
-        
         # Define FIXED edges (NO conditionals, NO loops)
         workflow.add_edge("ui_extractor", "planner")
         workflow.add_edge("planner", "designer")

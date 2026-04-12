@@ -17,10 +17,10 @@ class AIConfig:
     AZURE_OPENAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o")
     AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
     
-    # Token Limits (IMPORTANT for cost control)
-    MAX_TOKENS_PLANNER = 300  # Planner agent - generate scenarios
-    MAX_TOKENS_DESIGNER = 500  # Designer agent - create test steps
-    MAX_TOKENS_VALIDATOR = 200  # Validator agent - analyze results
+    # Token Limits (TESTING MODE - No limits, measure actual usage)
+    MAX_TOKENS_PLANNER = 8000    # Increased to allow more scenarios
+    MAX_TOKENS_DESIGNER = 8000   # Increased for detailed test steps
+    MAX_TOKENS_VALIDATOR = 4000  # Unlimited for testing (includes root cause + self-healing)
     
     # Temperature Settings
     TEMPERATURE = 0  # Deterministic output
@@ -29,10 +29,10 @@ class AIConfig:
     ENABLE_PROMPT_CACHING = True  # Cache system prompts
     CACHE_TTL_SECONDS = 300  # Cache validity: 5 minutes
     
-    # Workflow Safeguards
-    MAX_TESTS = 20  # Maximum tests per run
+    # Workflow Safeguards (TESTING MODE - Generous limits)
+    MAX_TESTS = 100  # Allow up to 100 tests to see full potential
     MAX_ITERATIONS = 1  # Maximum feedback loop iterations (SAFE: only 1 retry allowed)
-    TIMEOUT_MINUTES = 30  # Maximum execution time
+    TIMEOUT_MINUTES = 60  # 1 hour maximum for comprehensive testing
     ENABLE_LIFECYCLE_LOOP = False  # Enable safe lifecycle loop (max 1 retry)
     ENABLE_LEARNING_LAYER = True  # Enable failure history tracking
     

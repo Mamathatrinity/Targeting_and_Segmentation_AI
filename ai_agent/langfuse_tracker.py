@@ -30,14 +30,14 @@ class LangfuseTracker:
                     host=host
                 )
                 self.enabled = True
-                print("✓ Langfuse tracking enabled")
+                print("Langfuse tracking enabled")
             else:
-                print("⚠ Langfuse credentials not found - tracking disabled")
+                print("WARNING: Langfuse credentials not found - tracking disabled")
         
         except ImportError:
-            print("⚠ Langfuse not installed - tracking disabled")
+            print("WARNING: Langfuse not installed - tracking disabled")
         except Exception as e:
-            print(f"⚠ Langfuse initialization failed: {e}")
+            print(f"WARNING: Langfuse initialization failed: {e}")
     
     def trace_agent(self, agent_name: str, input_data: Any, output_data: Any, metadata: dict = None):
         """
