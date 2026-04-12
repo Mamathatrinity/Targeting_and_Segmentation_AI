@@ -35,7 +35,7 @@ class ValidatorAgent:
         )
         
         # Load YAML prompt template
-        self.prompt_data = load_prompt("ai_agent/prompts/validator.yaml")
+        self.prompt_data = load_prompt("validator.yaml")
     
     def validate_results(self, execution_results: Dict) -> Dict:
         """
@@ -60,8 +60,7 @@ class ValidatorAgent:
         )
         
         # Check cache first (50-70% cost savings)
-        cache_key = json.dumps(summary)
-        cached_response = get_cached_response(formatted_prompt, cache_key)
+        cached_response = get_cached_response(formatted_prompt)
         if cached_response:
             response_content = cached_response
         else:
@@ -70,7 +69,7 @@ class ValidatorAgent:
             response_content = response.content
             
             # Cache the response
-            set_cached_response(formatted_prompt, cache_key, response_content)
+            set_cached_response(formatted_prompt, response_content)
         
         # Track with Langfuse
         tracker.generation(

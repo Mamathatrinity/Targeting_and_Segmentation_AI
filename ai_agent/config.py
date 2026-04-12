@@ -18,8 +18,8 @@ class AIConfig:
     AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
     
     # Token Limits (TESTING MODE - No limits, measure actual usage)
-    MAX_TOKENS_PLANNER = 4000    # Unlimited for testing
-    MAX_TOKENS_DESIGNER = 4000   # Unlimited for testing
+    MAX_TOKENS_PLANNER = 8000    # Increased to allow more scenarios
+    MAX_TOKENS_DESIGNER = 8000   # Increased for detailed test steps
     MAX_TOKENS_VALIDATOR = 4000  # Unlimited for testing (includes root cause + self-healing)
     
     # Temperature Settings

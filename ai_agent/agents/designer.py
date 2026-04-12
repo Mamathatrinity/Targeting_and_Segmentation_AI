@@ -100,7 +100,7 @@ class DesignerAgent:
         )
         
         # Load YAML prompt template
-        self.prompt_data = load_prompt("ai_agent/prompts/designer.yaml")
+        self.prompt_data = load_prompt("designer.yaml")
     
     def design_tests(self, scenarios: dict, ui_data: dict, max_tests: int = None) -> List[dict]:
         """
@@ -132,8 +132,7 @@ class DesignerAgent:
         )
         
         # Check cache first (50-70% cost savings)
-        cache_key = f"{scenarios_text}_{ui_elements_text}"
-        cached_response = get_cached_response(formatted_prompt, cache_key)
+        cached_response = get_cached_response(formatted_prompt)
         if cached_response:
             response_content = cached_response
         else:
@@ -142,7 +141,7 @@ class DesignerAgent:
             response_content = response.content
             
             # Cache the response
-            set_cached_response(formatted_prompt, cache_key, response_content)
+            set_cached_response(formatted_prompt, response_content)
         
         # Track with Langfuse
         tracker.generation(
@@ -157,10 +156,20 @@ class DesignerAgent:
         try:
             # Remove markdown code blocks if present
             content = response_content.strip()
-            if content.startswith("```"):
-                content = content.split("```")[1]
-                if content.startswith("json"):
-                    content = content[4:]
+            
+            # Extract JSON from markdown code blocks
+            if "```json" in content:
+                # Find content between ```json and ```
+                start = content.find("```json") + 7
+                end = content.find("```", start)
+                content = content[start:end].strip()
+            elif content.startswith("```"):
+                # Handle generic ``` blocks
+                parts = content.split("```")
+                if len(parts) >= 2:
+                    content = parts[1].strip()
+                    if content.startswith("json"):
+                        content = content[4:].strip()
             
             data = json.loads(content)
             test_cases = data.get("test_cases", [])
@@ -351,7 +360,7 @@ class DesignerAgent:
         
         # Save file
         wb.save(output_file)
-        print(f"\n✅ Test cases exported to: {output_file}")
+        print(f"\n[OK] Test cases exported to: {output_file}")
         print(f"   Total test cases: {len(test_cases)}")
         return output_file
 

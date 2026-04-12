@@ -8,7 +8,7 @@ CONTEXT: |
   - Layers: UI (Playwright), API (Requests), Database (PyMySQL)
   - Format: Each step has action, target, value, expected result, and layer
   - Purpose: Steps will be executed by automation framework and documented in Excel
-  - Excel Columns: Test Case Name | Description | Preconditions | Test Steps | Expected Result | Actual Result | Status | Layer
+  - Excel Columns: Test Case Name | Description | Test Steps | Expected Result | Actual Result | Layer
 
 ALLOWED_ACTIONS:
   ui_actions:
@@ -43,19 +43,19 @@ NOT_ALLOWED:
 
 STEP_RULES:
   ui_layer:
-    - "Use specific selectors from UI elements provided"
+    - "Use specific selectors: 'Email field', 'Login button', not just 'input'"
     - "Include expected results: 'Dashboard page appears', 'Error message displays'"
     - "Navigate first: Always start with navigate action to target URL"
     - "Verify after actions: After click/fill, verify the result"
   
   api_layer:
-    - "Specify full endpoint path based on action performed"
+    - "Specify full endpoint: '/api/auth/login', not just 'login'"
     - "State expected status: 200, 400, 401, 404, 500"
     - "Verify response data: Check specific JSON fields returned"
     - "Include auth if needed: Mention token/session requirements"
   
   db_layer:
-    - "Specify table and column based on data being validated"
+    - "Specify table and column: 'users.last_login', not just 'login'"
     - "Use WHERE conditions: Identify specific records to check"
     - "State expected value: 'IS NOT NULL', '= active', '> 0'"
     - "Read-only: Only SELECT queries, no modifications"
@@ -76,13 +76,13 @@ THINK_STEPWISE: |
      - Add click steps for buttons
      - Add verify_text for expected outcomes
   3. Design API steps (Layer: API):
-     - Identify API calls triggered by UI actions
+     - Identify API calls triggered by UI actions (login → /api/auth/session)
      - Add verify_api for status code (200, 400, etc.)
      - Add verify_api_field for response data validation
   4. Design DB steps (Layer: DB):
-     - Identify database changes based on the action performed
+     - Identify database changes (user login → users.last_login updated)
      - Add verify_db to check data persistence
-     - Use WHERE to identify correct record
+     - Use WHERE to identify correct record (WHERE email = 'test@test.com')
   5. Order steps logically:
      - UI actions first (user interaction)
      - API verification second (system response)
@@ -92,13 +92,13 @@ THINK_STEPWISE: |
 
 LAYER_STRATEGY: |
   When to add API validation:
-  - After authentication actions → verify session/token endpoints
-  - After search/filter → verify search endpoints return matching data
-  - After form submission → verify submission endpoints return success
+  - After login/authentication → verify /api/auth/session returns 200
+  - After search/filter → verify /api/search returns data matching filters
+  - After form submission → verify /api/submit returns success
   
   When to add DB validation:
-  - After record creation → verify table has new record
-  - After updates → verify timestamps and modified fields updated
+  - After user registration → verify users table has new record
+  - After login → verify users.last_login timestamp updated
   - After data modification → verify database reflects changes
   
   When UI-only is sufficient:
@@ -126,7 +126,7 @@ OUTPUT_JSON: |
   }
 
 FEW_SHOT_EXAMPLES:
-  - scenario: "User logs in with email 'john.doe@example.com' and password 'SecurePass123!' and sees 'Welcome, John' message on Dashboard"
+  - scenario: "User logs in with email 'john.doe@healthcare.com' and password 'SecurePass123!' and sees 'Welcome, John' message on Dashboard"
     ui_elements:
       inputs:
         - label: "Email"
@@ -139,13 +139,13 @@ FEW_SHOT_EXAMPLES:
       steps:
         - action: "navigate"
           target: "url"
-          value: "https://app.example.com/login"
+          value: "https://ce-ts-dev.trinitylifesciences.com/login"
           expected: "Login page loads successfully"
           layer: "UI"
         - action: "fill"
           target: "Email"
-          value: "john.doe@example.com"
-          expected: "Email field populated with john.doe@example.com"
+          value: "john.doe@healthcare.com"
+          expected: "Email field populated with john.doe@healthcare.com"
           layer: "UI"
         - action: "fill"
           target: "Password"
@@ -167,67 +167,67 @@ FEW_SHOT_EXAMPLES:
         - action: "verify_api_field"
           endpoint: "/api/auth/session"
           field: "user.email"
-          expected_value: "john.doe@example.com"
+          expected_value: "john.doe@healthcare.com"
           expected: "API response contains correct user email"
           layer: "API"
         - action: "verify_db"
           table: "users"
           column: "last_login"
-          condition: "IS NOT NULL WHERE email = 'john.doe@example.com'"
+          condition: "IS NOT NULL WHERE email = 'john.doe@healthcare.com'"
           expected: "Database shows last_login timestamp updated within last 10 seconds"
           layer: "DB"
         - action: "verify_db"
           table: "users"
           column: "login_count"
-          condition: "> 0 WHERE email = 'john.doe@example.com'"
+          condition: "> 0 WHERE email = 'john.doe@healthcare.com'"
           expected: "Login count incremented by 1"
           layer: "DB"
 
-  - scenario: "User searches for item by entering 'Product A', clicks Apply Filters, sees results table showing 'Product A' entries"
+  - scenario: "User searches for HCP by entering 'Dr. Smith', clicks Apply Filters, sees results table showing 'Dr. Smith' entries with NPI numbers"
     ui_elements:
       inputs:
-        - placeholder: "Search by name"
+        - placeholder: "Search by HCP name"
       buttons:
         - text: "Apply Filters"
     output:
-      name: "test_search_valid"
-      description: "User searches for specific item and validates UI results, API response, and database query execution"
+      name: "test_search_hcp_valid"
+      description: "User searches for specific HCP and validates UI results, API response, and database query execution"
       steps:
         - action: "navigate"
           target: "url"
-          value: "https://app.example.com/search"
+          value: "https://ce-ts-dev.trinitylifesciences.com/search"
           expected: "Search page loads with filters visible"
           layer: "UI"
         - action: "fill"
-          target: "Search by name"
-          value: "Product A"
-          expected: "Search field populated with Product A"
+          target: "Search by HCP name"
+          value: "Dr. Smith"
+          expected: "Search field populated with Dr. Smith"
           layer: "UI"
         - action: "click"
           target: "Apply Filters"
           expected: "Search executed, loading indicator appears"
           layer: "UI"
         - action: "verify_text"
-          expected: "Product A"
+          expected: "Dr. Smith"
           layer: "UI"
         - action: "verify_element"
-          target: "ID column"
-          expected: "IDs visible in results table"
+          target: "NPI number column"
+          expected: "NPI numbers visible in results table"
           layer: "UI"
         - action: "verify_api"
-          endpoint: "/api/search?name=Product A"
+          endpoint: "/api/hcp/search?name=Dr. Smith"
           expected_status: 200
-          expected: "Search API returns 200 with matching records"
+          expected: "Search API returns 200 with matching HCP records"
           layer: "API"
         - action: "verify_api_field"
-          endpoint: "/api/search?name=Product A"
+          endpoint: "/api/hcp/search?name=Dr. Smith"
           field: "results[0].name"
-          expected_value: "Product A"
-          expected: "First result contains Product A in name field"
+          expected_value: "Dr. Smith"
+          expected: "First result contains Dr. Smith in name field"
           layer: "API"
         - action: "verify_db_count"
-          table: "items"
-          condition: "WHERE name LIKE '%Product A%'"
+          table: "hcp_profiles"
+          condition: "WHERE name LIKE '%Dr. Smith%'"
           expected: "Database returns count > 0 matching search criteria"
           layer: "DB"
 
@@ -244,7 +244,7 @@ FEW_SHOT_EXAMPLES:
       steps:
         - action: "navigate"
           target: "url"
-          value: "https://app.example.com/login"
+          value: "https://ce-ts-dev.trinitylifesciences.com/login"
           expected: "Login page loads"
           layer: "UI"
         - action: "fill"

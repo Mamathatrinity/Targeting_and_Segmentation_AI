@@ -47,7 +47,7 @@ class PlannerAgent:
         self.parser = PydanticOutputParser(pydantic_object=TestScenarios)
         
         # Load YAML prompt template
-        self.prompt_data = load_prompt("ai_agent/prompts/planner.yaml")
+        self.prompt_data = load_prompt("planner.yaml")
     
     def generate_scenarios(self, ui_data: dict) -> dict:
         """
@@ -65,6 +65,16 @@ class PlannerAgent:
         # Prepare compact UI data for token efficiency
         compact_ui = self._compact_ui_data(ui_data)
         
+        # Get focus area if provided
+        focus_area = ui_data.get("focus_area", "")
+        focus_instruction = ""
+        if focus_area == "authentication":
+            focus_instruction = "Focus ONLY on: Login flows, session management, password validation, remember me, account lockout, multi-factor auth"
+        elif focus_area == "security":
+            focus_instruction = "Focus ONLY on: SQL injection, XSS, CSRF, brute force, rate limiting, unauthorized access, session hijacking"
+        elif focus_area == "ux":
+            focus_instruction = "Focus ONLY on: Browser behaviors, tab navigation, copy-paste, autofill, keyboard shortcuts, back/forward buttons, form validation UX"
+        
         # Format YAML prompt with BOTH natural language + UI data (combined approach)
         formatted_prompt = format_prompt(
             self.prompt_data,
@@ -72,12 +82,12 @@ class PlannerAgent:
             ui_data=json.dumps(compact_ui, indent=2),  # Technical details
             domain_context="HCP Targeting & Segmentation: Medical specialties, segments, filters, NPI numbers, HIPAA compliance",
             compliance_requirements="HIPAA compliance, PII masking, data privacy, audit logging",
+            focus_area=focus_instruction,  # Add focus area instruction
             format_instructions=self.parser.get_format_instructions()
         )
         
         # Check cache first (50-70% cost savings)
-        cache_key = json.dumps(compact_ui)
-        cached_response = get_cached_response(formatted_prompt, cache_key)
+        cached_response = get_cached_response(formatted_prompt)
         if cached_response:
             response_content = cached_response
         else:
@@ -86,7 +96,7 @@ class PlannerAgent:
             response_content = response.content
             
             # Cache the response
-            set_cached_response(formatted_prompt, cache_key, response_content)
+            set_cached_response(formatted_prompt, response_content)
         
         # Track with Langfuse
         tracker.generation(
