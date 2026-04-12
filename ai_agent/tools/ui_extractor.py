@@ -1,17 +1,21 @@
 """
 UI Extractor Tool (NO AI)
-Extracts UI elements using Playwright for agent analysis
+Extracts UI elements using MCP Client for agent analysis
 """
-from playwright.sync_api import sync_playwright
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+
+from mcp_server.client import MCPClient
 from typing import Dict, List
 import json
 
 
 class UIExtractor:
-    """Extracts structured UI data without AI"""
+    """Extracts structured UI data without AI (via MCP Server)"""
     
-    def __init__(self, headless: bool = False):
-        self.headless = headless
+    def __init__(self, mcp_url: str = "http://localhost:8080"):
+        self.mcp = MCPClient(mcp_url)
     
     def extract_ui_elements(self, url: str) -> Dict:
         """
@@ -23,94 +27,11 @@ class UIExtractor:
         Returns:
             Structured UI data with inputs, buttons, dropdowns, etc.
         """
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=self.headless)
-            page = browser.new_page()
-            
-            try:
-                # Navigate to URL
-                page.goto(url, wait_until="networkidle", timeout=30000)
-                page.wait_for_timeout(2000)  # Wait for dynamic content
-                
-                # Extract all interactive elements
-                elements = page.evaluate("""
-                    () => {
-                        const results = {
-                            inputs: [],
-                            buttons: [],
-                            dropdowns: [],
-                            checkboxes: [],
-                            links: []
-                        };
-                        
-                        // Extract input fields
-                        document.querySelectorAll('input[type="text"], input[type="email"], input[type="password"], input[type="number"]')
-                            .forEach(el => {
-                                results.inputs.push({
-                                    type: el.type,
-                                    name: el.name || '',
-                                    id: el.id || '',
-                                    placeholder: el.placeholder || '',
-                                    label: el.labels?.[0]?.innerText || ''
-                                });
-                            });
-                        
-                        // Extract buttons
-                        document.querySelectorAll('button, input[type="button"], input[type="submit"]')
-                            .forEach(el => {
-                                results.buttons.push({
-                                    text: el.innerText || el.value || '',
-                                    id: el.id || '',
-                                    type: el.type || 'button'
-                                });
-                            });
-                        
-                        // Extract dropdowns
-                        document.querySelectorAll('select')
-                            .forEach(el => {
-                                const options = Array.from(el.options).map(opt => opt.text);
-                                results.dropdowns.push({
-                                    name: el.name || '',
-                                    id: el.id || '',
-                                    label: el.labels?.[0]?.innerText || '',
-                                    options: options.slice(0, 5)  // First 5 options only for token efficiency
-                                });
-                            });
-                        
-                        // Extract checkboxes
-                        document.querySelectorAll('input[type="checkbox"]')
-                            .forEach(el => {
-                                results.checkboxes.push({
-                                    name: el.name || '',
-                                    id: el.id || '',
-                                    label: el.labels?.[0]?.innerText || ''
-                                });
-                            });
-                        
-                        // Extract important links (navigation)
-                        document.querySelectorAll('nav a[href], .menu a[href]')
-                            .forEach(el => {
-                                results.links.push({
-                                    text: el.innerText?.trim() || '',
-                                    href: el.href
-                                });
-                            });
-                        
-                        return results;
-                    }
-                """)
-                
-                # Get page title and URL
-                page_info = {
-                    "url": page.url,
-                    "title": page.title(),
-                    "elements": elements
-                }
-                
-                return page_info
-                
-            finally:
-                browser.close()
+        # Use MCP server to extract UI
+        result = self.mcp.extract_ui(url)
+        
+        if result.get("success"):
+            return result.get("ui_data", {})
     
     def extract_summary(self, url: str) -> Dict:
         """Ultra-minimal extraction (90% token reduction)"""
@@ -141,20 +62,19 @@ class UIExtractor:
 
 
 # Utility function for easy import
-def extract_ui(url: str, headless: bool = False) -> Dict:
+def extract_ui(url: str, mcp_url: str = "http://localhost:8080") -> Dict:
     """Quick UI extraction function"""
-    extractor = UIExtractor(headless=headless)
+    extractor = UIExtractor(mcp_url=mcp_url)
     return extractor.extract_summary(url)  # Use summary for token efficiency
 
 
 if __name__ == "__main__":
     # Test extraction
-    import sys
-    
     test_url = sys.argv[1] if len(sys.argv) > 1 else "https://ce-ts-dev.trinitylifesciences.com/segments"
     
     print(f"Extracting UI from: {test_url}")
-    extractor = UIExtractor(headless=False)
+    print("Note: Make sure MCP server is running (python mcp_server/server.py)")
+    extractor = UIExtractor()
     data = extractor.extract_summary(test_url)
     
     print(json.dumps(data, indent=2))

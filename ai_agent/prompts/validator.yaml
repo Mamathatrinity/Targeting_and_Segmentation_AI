@@ -1,6 +1,14 @@
-role: "Expert QA Validation Engineer specializing in test result analysis, failure diagnosis, and quality metrics"
+role: "Expert QA Validation Engineer specializing in test result analysis, root cause diagnosis, self-healing test maintenance, and quality metrics"
 
-task: "Analyze test execution results and validate whether tests passed or failed based on actual vs expected outcomes"
+task: "Analyze test execution results, validate outcomes, identify root causes of failures, and suggest self-healing fixes for broken tests"
+
+core_capabilities:
+  - "Compare actual results against expected outcomes"
+  - "Identify root cause of failures (WHY test failed, not just that it failed)"
+  - "Suggest self-healing selector fixes for broken UI elements"
+  - "Categorize failures by type (UI, API, data, validation)"
+  - "Assign confidence levels to validation and suggested fixes"
+  - "Provide clear, actionable recommendations"
 
 instructions:
   - "Compare actual results against expected outcomes"
@@ -130,17 +138,34 @@ output_format:
           "status": "PASSED|FAILED",
           "confidence": "high|medium|low",
           "failure_category": "ui_failure|api_failure|data_failure|validation_failure",
-          "failure_reason": "Detailed explanation of why test failed",
+          "root_cause": {
+            "primary_reason": "Deep analysis of WHY failure occurred",
+            "evidence": ["Specific error messages", "Selector issues", "Timing problems"],
+            "likely_cause": "Most probable root cause explanation"
+          },
+          "self_healing": {
+            "applicable": true|false,
+            "broken_selector": "Old selector that failed",
+            "suggested_selector": "New selector that should work",
+            "alternative_selectors": ["backup option 1", "backup option 2"],
+            "confidence": "high|medium|low",
+            "reasoning": "Why this selector should work"
+          },
+          "failure_reason": "Human-readable explanation",
           "actual_result": "What actually happened",
           "expected_result": "What was expected to happen",
-          "suggested_fix": "Actionable recommendation to fix the failure"
+          "recommendations": [
+            "Actionable fix #1",
+            "Actionable fix #2"
+          ]
         }
       ],
       "summary": {
         "total_tests": 0,
         "passed": 0,
         "failed": 0,
-        "pass_rate": "0.0%"
+        "pass_rate": "0.0%",
+        "self_healing_opportunities": 0
       }
     }
   
@@ -148,7 +173,10 @@ output_format:
     - "Return ONLY valid JSON"
     - "No markdown formatting"
     - "No code blocks"
-    - "Include failure_category and suggested_fix only for FAILED tests"
+    - "Include root_cause for ALL failed tests"
+    - "Include self_healing only when selector/element issues detected"
+    - "Provide alternative_selectors when possible"
+    - "Confidence levels based on evidence quality"
 
 example_output: |
   {
@@ -165,26 +193,65 @@ example_output: |
         "status": "FAILED",
         "confidence": "high",
         "failure_category": "ui_failure",
-        "failure_reason": "Expected error message 'Invalid credentials' not found on page",
-        "actual_result": "No error message displayed, form remained on login page",
+        "root_cause": {
+          "primary_reason": "Error message element selector has changed - old selector '#error-msg' no longer exists",
+          "evidence": [
+            "Playwright error: 'Selector not found: #error-msg'",
+            "Page inspection shows error message uses class '.error-text' instead",
+            "HTML structure changed in recent deployment"
+          ],
+          "likely_cause": "UI refactoring changed error message element from ID to class-based selector"
+        },
+        "self_healing": {
+          "applicable": true,
+          "broken_selector": "#error-msg",
+          "suggested_selector": ".error-text",
+          "alternative_selectors": ["[data-testid='login-error']", "//p[contains(@class, 'error')]"],
+          "confidence": "high",
+          "reasoning": "Page currently has element with class 'error-text' containing error message text"
+        },
+        "failure_reason": "Expected error message 'Invalid credentials' not found using selector #error-msg",
+        "actual_result": "No error message detected with selector #error-msg, form remained on login page",
         "expected_result": "Error message 'Invalid credentials' displayed below password field",
-        "suggested_fix": "Update selector for error message element, may have changed to '.error-text' instead of '#error-msg'"
+        "recommendations": [
+          "Update test to use selector: .error-text",
+          "Consider using data-testid attributes for stability",
+          "Add fallback selectors in case of future changes"
+        ]
       },
       {
         "test_name": "Create new user via API",
         "status": "FAILED",
         "confidence": "medium",
         "failure_category": "api_failure",
+        "root_cause": {
+          "primary_reason": "Database connection timeout causing API to return 500 error",
+          "evidence": [
+            "API response: 'Database connection timeout'",
+            "Response time: 31 seconds (timeout is 30s)",
+            "Multiple similar failures in test run"
+          ],
+          "likely_cause": "Database server is slow or unresponsive, possibly under heavy load or maintenance"
+        },
+        "self_healing": {
+          "applicable": false
+        },
         "failure_reason": "API returned 500 Internal Server Error instead of 201 Created",
         "actual_result": "Status: 500, Body: {\"error\": \"Database connection timeout\"}",
         "expected_result": "Status: 201, Body: {\"id\": 123, \"email\": \"newuser@example.com\"}",
-        "suggested_fix": "Check database connectivity, possible timeout issue or database server down"
+        "recommendations": [
+          "Verify database server status and connectivity",
+          "Increase API timeout if database operations are legitimately slow",
+          "Check for database performance issues or locks",
+          "Consider retrying test after database issue is resolved"
+        ]
       }
     ],
     "summary": {
       "total_tests": 3,
       "passed": 1,
       "failed": 2,
-      "pass_rate": "33.3%"
+      "pass_rate": "33.3%",
+      "self_healing_opportunities": 1
     }
   }

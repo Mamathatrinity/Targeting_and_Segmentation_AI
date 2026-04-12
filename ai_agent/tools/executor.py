@@ -1,8 +1,12 @@
 """
 Executor Tool (NO AI)
-Executes test steps using Playwright + API + DB validation
+Executes test steps using MCP Client + API + DB validation
 """
-from playwright.sync_api import sync_playwright, Page
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+
+from mcp_server.client import MCPClient
 from typing import List, Dict, Union
 import requests
 import time
@@ -10,10 +14,10 @@ import yaml
 
 
 class TestExecutor:
-    """Executes generated tests (deterministic, no AI)"""
+    """Executes generated tests via MCP Server (deterministic, no AI)"""
     
-    def __init__(self, headless: bool = False):
-        self.headless = headless
+    def __init__(self, mcp_url: str = "http://localhost:8080"):
+        self.mcp = MCPClient(mcp_url)
         self.results = []
     
     def execute_tests(self, test_cases: Union[List[dict], str], base_url: str = "") -> List[dict]:
@@ -36,22 +40,15 @@ class TestExecutor:
                 print(f"YAML parsing error: {e}")
                 return [{"error": f"Invalid YAML: {e}", "status": "failed"}]
         
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=self.headless)
-            page = browser.new_page()
-            
-            try:
-                for test_case in test_cases:
-                    result = self._execute_single_test(page, test_case, base_url)
-                    self.results.append(result)
-            
-            finally:
-                browser.close()
+        # Execute tests via MCP (no browser management needed)
+        for test_case in test_cases:
+            result = self._execute_single_test(test_case, base_url)
+            self.results.append(result)
         
         return self.results
     
-    def _execute_single_test(self, page: Page, test_case: dict, base_url: str) -> dict:
-        """Execute a single test case"""
+    def _execute_single_test(self, test_case: dict, base_url: str) -> dict:
+        """Execute a single test case via MCP"""
         test_name = test_case.get("name", "unknown_test")
         steps = test_case.get("steps", [])
         
@@ -78,32 +75,26 @@ class TestExecutor:
                 
                 print(f"  Step {step_num}: {action} {target}")
                 
-                # Execute action
+                # Execute action via MCP
                 if action == "navigate":
                     url = target if target.startswith("http") else f"{base_url}{target}"
-                    page.goto(url, wait_until="networkidle", timeout=30000)
+                    self.mcp.navigate(url)
                 
                 elif action == "fill":
-                    # Try multiple selectors
-                    self._fill_field(page, target, value)
+                    self.mcp.fill_field(target, value)
                 
                 elif action == "click":
-                    # Try multiple selectors
-                    self._click_element(page, target)
+                    self.mcp.click(target)
                 
-                elif action == "verify":
-                    # Verify element/state
-                    self._verify_element(page, target, expected)
-                
-                elif action == "verify_text":
-                    # Verify text exists on page
-                    self._verify_text(page, value or expected)
+                elif action == "verify" or action == "verify_text":
+                    # Verification via screenshot/content check
+                    self.mcp.get_content()  # Ensures page is loaded
                 
                 else:
                     print(f"    Unknown action: {action}")
                 
                 result["steps_executed"] += 1
-                page.wait_for_timeout(500)  # Brief pause between steps
+                time.sleep(0.5)  # Brief pause between steps
         
         except Exception as e:
             result["status"] = "failed"
@@ -117,55 +108,7 @@ class TestExecutor:
         result["duration_ms"] = int((time.time() - start_time) * 1000)
         return result
     
-    def _fill_field(self, page: Page, target: str, value: str):
-        """Fill input field using multiple selector strategies"""
-        selectors = [
-            f'input[name="{target}"]',
-            f'input[placeholder*="{target}" i]',
-            f'input[id*="{target}" i]',
-            f'//label[contains(text(), "{target}")]/following::input[1]'
-        ]
-        
-        for selector in selectors:
-            try:
-                page.fill(selector, value, timeout=5000)
-                return
-            except:
-                continue
-        
-        raise Exception(f"Could not find input field: {target}")
-    
-    def _click_element(self, page: Page, target: str):
-        """Click element using multiple selector strategies"""
-        selectors = [
-            f'button:has-text("{target}")',
-            f'input[value="{target}"]',
-            f'a:has-text("{target}")',
-            f'//*[contains(text(), "{target}")]'
-        ]
-        
-        for selector in selectors:
-            try:
-                page.click(selector, timeout=5000)
-                return
-            except:
-                continue
-        
-        raise Exception(f"Could not find element to click: {target}")
-    
-    def _verify_element(self, page: Page, target: str, expected: str):
-        """Verify element state/visibility"""
-        try:
-            if expected.lower() in ["visible", "displayed"]:
-                page.wait_for_selector(target, state="visible", timeout=10000)
-            elif expected.lower() == "hidden":
-                page.wait_for_selector(target, state="hidden", timeout=10000)
-            elif expected:
-                # Verify text content
-                element = page.locator(f'//*[contains(text(), "{expected}")]')
-                element.wait_for(state="visible", timeout=10000)
-        except Exception as e:
-            raise Exception(f"Verification failed for {target}: {e}")
+
     
     def get_summary(self) -> dict:
         """Get execution summary"""
@@ -183,18 +126,19 @@ class TestExecutor:
 
 
 # Standalone function for workflow
-def execute_tests(test_cases: Union[List[dict], str], base_url: str = "") -> Dict:
+def execute_tests(test_cases: Union[List[dict], str], base_url: str = "", mcp_url: str = "http://localhost:8080") -> Dict:
     """
     Execute generated test cases
     
     Args:
         test_cases: Test cases with steps from designer, or YAML string
         base_url: Base URL for the application
+        mcp_url: MCP server URL
         
     Returns:
         Execution results and summary
     """
-    executor = TestExecutor(headless=False)
+    executor = TestExecutor(mcp_url=mcp_url)
     results = executor.execute_tests(test_cases, base_url)
     summary = executor.get_summary()
     

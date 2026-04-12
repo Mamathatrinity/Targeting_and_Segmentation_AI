@@ -1,0 +1,42 @@
+{
+  "mcpServers": {
+    "targeting-ai-testing": {
+      "url": "http://localhost:8080",
+      "description": "AI Testing Server for HCP Targeting & Segmentation with Parallel Execution Support",
+      "capabilities": [
+        "browser_automation",
+        "parallel_contexts",
+        "api_testing",
+        "database_validation",
+        "ui_extraction"
+      ],
+      "endpoints": {
+        "browser": {
+          "navigate": "/browser/navigate",
+          "fill": "/browser/fill",
+          "click": "/browser/click",
+          "extract_ui": "/browser/extract-ui",
+          "screenshot": "/browser/screenshot"
+        },
+        "contexts": {
+          "create": "/browser/context/create",
+          "close": "/browser/context/close"
+        },
+        "api": {
+          "call": "/api/call"
+        },
+        "database": {
+          "query": "/database/query"
+        },
+        "health": "/health"
+      },
+      "transport": "http",
+      "version": "1.0.0",
+      "features": {
+        "parallel_testing": true,
+        "browser_contexts": true,
+        "memory_efficient": true
+      }
+    }
+  }
+}

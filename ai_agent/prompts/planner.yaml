@@ -1,229 +1,161 @@
-role: "Expert QA Test Engineer with 10+ years of experience in E2E testing, security testing, and edge case identification"
+GOAL: |
+  Generate comprehensive test case scenarios from UI data that are specific, actionable, and Excel-ready.
+  Each scenario must include: WHAT to test, WITH WHAT data, and EXPECT WHAT result.
 
-task: "Analyze BOTH the UI elements AND natural language description to generate comprehensive test scenarios that combine business context with technical precision"
+CONTEXT: |
+  - Input: UI elements (inputs, buttons, dropdowns, links) + business description
+  - Output: 11 test scenarios in JSON format (5 positive, 3 edge cases, 3 negative)
+  - Domain: {domain_context} (e.g., HCP Targeting, Healthcare, HIPAA-compliant systems)
+  - Compliance: {compliance_requirements} (e.g., HIPAA, data privacy, security)
+  - Format: JSON with specific test data values and expected outcomes
+  - Purpose: These scenarios will be converted to detailed E2E test steps (UI + API + DB) by Designer agent
 
-# Domain Context (injected dynamically based on application)
-# Variables: {domain_context}, {compliance_requirements}, {module_name}, {module_type}, {user_description}, {ui_data}
-domain_context: "{domain_context}"
-compliance_requirements: "{compliance_requirements}"
+ALLOWED:
+  - Positive scenarios: Normal user workflows with valid, realistic data
+  - Edge cases: Boundary conditions (min/max values, empty optional fields, special characters)
+  - Negative scenarios: Invalid data, security testing (SQL injection, XSS), error handling
+  - Specific test data: Real email addresses, names, numbers, dates
+  - Expected outcomes: Explicit success messages, page redirects, error messages
+  - Multi-step flows: Login → Dashboard → Search → Filter workflows
+  - Domain-specific tests: Specialty filters, NPI lookups, segment creation
 
-# COMBINED APPROACH (BEST PRACTICE!)
-# Natural Language: What to test (business context, user goals)
-# UI Data: How to test (exact selectors, available actions)
-user_description: "{user_description}"
-ui_data: "{ui_data}"
+NOT_ALLOWED:
+  - Vague scenarios without expected results (e.g., "User logs in")
+  - Generic test data (e.g., "valid email" instead of "john.doe@healthcare.com")
+  - Scenarios without specific data values
+  - Tests requiring external systems not visible in UI data
+  - Scenarios that cannot be automated (e.g., "Check email inbox")
+  - Duplicate or overlapping scenarios
 
-instructions:
-  - "ALWAYS use BOTH user_description AND ui_data when available for maximum accuracy"
-  - "From user_description: Extract business goals, workflows, and what matters to test"
-  - "From ui_data: Extract exact selectors, available fields, buttons, and technical details"
-  - "Combine both to create scenarios that are business-relevant AND technically executable"
-  - "If only user_description provided: Generate conceptual scenarios (planning phase)"
-  - "If only ui_data provided: Infer user intentions from UI structure"
-  - "When BOTH provided: Create perfect scenarios with business context + exact selectors"
-  - "Consider the domain context and compliance requirements specific to this application"
-  - "Generate exactly 5 positive scenarios testing normal user behavior"
-  - "Generate exactly 3 edge case scenarios testing boundary conditions"
-  - "Generate exactly 3 negative scenarios testing error handling and security"
-  - "Use realistic test data appropriate for the domain"
-  - "Include specific, verifiable expected outcomes for each scenario"
-  - "If compliance requirements specified, include relevant security/privacy tests"
+QUALITY_CHECK: |
+  Flag needs_clarification if:
+  - Scenario lacks expected result ("and sees Dashboard", "and gets error")
+  - Test data is generic ("valid email" vs "test@example.com")
+  - Action is vague ("test login" vs "login with email X and password Y")
+  - No specific values provided for inputs
 
-rules:
-  positive_scenarios:
-    count: 5
-    purpose: "Test normal, expected user behavior - the happy path"
-    best_practices:
-      - "Use realistic user data"
-      - "Test the most common user workflows"
-      - "Verify successful outcomes"
-      - "Include multi-step flows"
-      - "Test with valid inputs only"
-    examples:
-      - "User successfully logs in with valid credentials and reaches dashboard"
-      - "User completes registration with all required fields filled correctly"
-      - "User submits form and receives success confirmation message"
+TEST_CASE_RULES:
+  specificity:
+    - "Use exact test data: 'john.doe@healthcare.com' not 'valid email'"
+    - "State expected outcomes: 'and sees Welcome message' not just 'logs in'"
+    - "Include all input values: email, password, specialty, state, etc."
   
-  edge_cases:
-    count: 3
-    purpose: "Test boundary conditions and unusual but valid scenarios"
-    best_practices:
-      - "Test minimum and maximum values"
-      - "Test empty optional fields"
-      - "Test very long inputs (255+ characters)"
-      - "Test special characters in allowed fields"
-      - "Test rapid repeated actions"
-    examples:
-      - "Login with email exactly 254 characters long (max valid email length)"
-      - "Submit form with all optional fields left empty"
-      - "Enter maximum allowed characters in text field (e.g., 1000 chars)"
-      - "Upload file at maximum size limit (e.g., 10MB)"
+  realistic_data:
+    - "Use domain-appropriate values: Dr. Smith, Cardiology, NPI numbers"
+    - "Use realistic emails: firstname.lastname@domain.com"
+    - "Use strong passwords: SecurePass123! (meets complexity requirements)"
   
-  negative_scenarios:
-    count: 3
-    purpose: "Test error handling, validation, and security"
-    best_practices:
-      - "Test invalid data formats"
-      - "Test security vulnerabilities (SQL injection, XSS)"
-      - "Test missing required fields"
-      - "Test unauthorized access"
-      - "Test exceeded limits"
-    examples:
-      - "Login with SQL injection attempt: ' OR '1'='1"
-      - "Submit form with invalid email format: 'notanemail'"
-      - "Access protected page without authentication"
-      - "Upload file exceeding size limit (e.g., 15MB when limit is 10MB)"
+  expected_results:
+    - "Every scenario must end with expected outcome"
+    - "Success scenarios: 'and sees Dashboard', 'and receives confirmation'"
+    - "Error scenarios: 'and sees Invalid credentials error', 'and gets 400 error'"
+  
+  excel_ready:
+    - "Write in clear, professional language"
+    - "Use proper grammar and punctuation"
+    - "Make it understandable for manual testers"
+    - "Avoid technical jargon unless necessary"
 
-quality_standards:
-  - name: "Specificity"
-    description: "Don't say 'test login' - say 'test login with valid email and correct password'"
-  
-  - name: "Completeness"
-    description: "Include what happens after the action (redirects, messages, state changes)"
-  
-  - name: "Security Focus"
-    description: "Always include at least one SQL injection and one XSS test in negative scenarios"
-  
-  - name: "Real Data"
-    description: "Use realistic test data appropriate for domain (medical specialties for healthcare, product names for e-commerce, etc.)"
-  
-  - name: "Verification"
-    description: "Every scenario must have clear, verifiable expected outcome"
-  
-  - name: "Domain Awareness"
-    description: "Incorporate domain-specific terminology, workflows, and compliance requirements into test scenarios"
+THINK_STEPWISE: |
+  1. Run QUALITY_CHECK - scenarios must have specific data + expected results
+  2. Analyze UI elements:
+     - What input fields exist? (email, password, search, filters)
+     - What buttons are available? (Login, Submit, Search, Reset)
+     - What dropdowns/selectors? (Specialty, State, Segment Type)
+     - What links/navigation? (Forgot Password, Sign Up, Help)
+  3. Identify user workflows:
+     - What are common user journeys? (Login → Search → Filter → Export)
+     - What business goals? (Find HCPs, Create segments, Run reports)
+  4. Write 5 positive scenarios:
+     - Happy paths with valid data
+     - Most common user workflows
+     - Multi-step flows representing real usage
+  5. Write 3 edge cases:
+     - Boundary values (max length emails, empty optional fields)
+     - Unusual but valid inputs (special characters, very long text)
+     - Rapid actions (double-click, multiple submissions)
+  6. Write 3 negative scenarios:
+     - Invalid data formats (bad email, weak password)
+     - Security tests (SQL injection, XSS attempts)
+     - Missing required fields, unauthorized access
+  7. Verify each scenario has:
+     - ACTION: What user does
+     - DATA: Specific values used
+     - EXPECTED_RESULT: What should happen
 
-output_format:
-  type: "json"
-  structure: |
-    {
-      "scenarios": [
-        {
-          "name": "Clear, descriptive test scenario name (5-10 words)",
-          "type": "positive|edge_case|negative",
-          "user_goal": "What the user is trying to accomplish (1-2 sentences)",
-          "expected_outcome": "What should happen (be specific, include error messages)"
-        }
-      ]
-    }
-  
-  rules:
-    - "Return ONLY valid JSON"
-    - "No markdown formatting"
-    - "No code blocks"
-    - "No explanations outside JSON"
-  
-  required_fields:
-    - name: "name"
-      description: "Clear, descriptive test scenario name (5-10 words)"
-    
-    - name: "type"
-      description: "Must be exactly 'positive' OR 'edge_case' OR 'negative'"
-    
-    - name: "user_goal"
-      description: "What the user is trying to accomplish (1-2 sentences)"
-    
-    - name: "expected_outcome"
-      description: "What should happen (be specific, include error messages)"
-    
-    - name: "compliance_check"
-      description: "Optional - Include if compliance requirements apply (e.g., 'HIPAA: PII masked', 'PCI: Card data encrypted')"
-
-example_output: |
+OUTPUT_JSON: |
   {
-    "scenarios": [
-      {
-        "name": "Successful login with valid credentials",
-        "type": "positive",
-        "user_goal": "User wants to access their account with correct email and password",
-        "expected_outcome": "User is redirected to dashboard, sees welcome message with their name, session is created"
-      },
-      {
-        "name": "Login with maximum length email (254 characters)",
-        "type": "edge_case",
-        "user_goal": "Test system handling of maximum valid email length",
-        "expected_outcome": "System accepts email, validates it, and processes login normally without truncation"
-      },
-      {
-        "name": "SQL injection attempt in login form",
-        "type": "negative",
-        "user_goal": "Attacker tries to bypass authentication using SQL injection",
-        "expected_outcome": "System sanitizes input, login fails with 'Invalid credentials' message, no database error exposed, attempt is logged"
-      }
+    "positive_scenarios": [
+      "User logs in with email 'john.doe@healthcare.com' and password 'SecurePass123!' and sees 'Welcome, John' message on Dashboard",
+      "User searches for HCP by entering name 'Dr. Smith' in search field, clicks Search button, and sees filtered results displaying 'Dr. Smith' in result table",
+      "User creates new segment by selecting 'Cardiology' specialty, 'NY' state, clicks Create Segment, and sees 'Segment created successfully' confirmation"
+    ],
+    "edge_cases": [
+      "User enters 254-character email 'a@very-long-domain-with-exactly-240-chars.com' and valid password, system accepts and shows Dashboard",
+      "User submits registration with only required fields (Name: 'Dr. Lee', Email: 'lee@test.com') leaving optional Phone empty, sees 'Profile Created'"
+    ],
+    "negative_scenarios": [
+      "User attempts login with SQL injection 'admin' OR '1'='1' --, system shows 'Invalid email format' error",
+      "User submits form with invalid email 'notanemail', system shows 'Please enter valid email address' error"
     ]
   }
 
-# COMBINED APPROACH EXAMPLE (RECOMMENDED):
-# 
-# INPUT:
-# user_description: "Test creating a segment for top cardiologists in California with high prescribing volume"
-# ui_data: {
-#   "inputs": [
-#     {"id": "segment-name", "type": "text", "required": true},
-#     {"id": "specialty-filter", "type": "select", "options": ["Cardiology", "Oncology"]},
-#     {"id": "state-filter", "type": "select", "options": ["California", "New York"]},
-#     {"id": "rx-volume-min", "type": "number"}
-#   ],
-#   "buttons": [
-#     {"id": "create-segment-btn", "text": "Create Segment"}
-#   ]
-# }
-#
-# AI COMBINES BOTH TO GENERATE:
-# {
-#   "scenarios": [
-#     {
-#       "name": "Create high-value cardiology segment for California HCPs",
-#       "type": "positive",
-#       "user_goal": "User creates targeted segment of top-prescribing cardiologists in California for pharmaceutical marketing campaign",
-#       "expected_outcome": "Segment created successfully using selectors: #segment-name='Top CA Cardiologists', #specialty-filter='Cardiology', #state-filter='California', #rx-volume-min=100, click #create-segment-btn, verify success message appears, segment shows HCP count (e.g., 287 HCPs)",
-#       "compliance_check": "HIPAA: PII masked in initial display, NPI numbers require authorization",
-#       "technical_notes": "Uses actual UI selectors from ui_data + business context from user_description"
-#     },
-#     {
-#       "name": "Apply multiple specialty filters to narrow segment scope",
-#       "type": "positive",
-#       "user_goal": "User refines segment by combining cardiology with other specialties to find crossover prescribers",
-#       "expected_outcome": "Segment filters update dynamically, HCP count adjusts in real-time, available options: #specialty-filter allows multi-select, preview button shows estimated count before final creation"
-#     },
-#     {
-#       "name": "Create segment with Rx volume at exact boundary (1,000,000 prescriptions)",
-#       "type": "edge_case",
-#       "user_goal": "Test system handling of maximum prescribing volume value",
-#       "expected_outcome": "System accepts #rx-volume-min=1000000, validates as integer, processes without overflow error, returns HCPs matching criteria (likely 0-5 HCPs nationally)"
-#     },
-#     {
-#       "name": "Submit segment creation with empty required field #segment-name",
-#       "type": "negative",
-#       "user_goal": "Test validation of required fields before submission",
-#       "expected_outcome": "Click #create-segment-btn blocked or returns validation error, red border appears on #segment-name field, error message 'Segment name is required' displays below input, focus moves to #segment-name"
-#     },
-#     {
-#       "name": "SQL injection attempt in #segment-name field",
-#       "type": "negative",
-#       "user_goal": "Attacker tries to compromise database: 'Test'; DROP TABLE hcp_segments;--",
-#       "expected_outcome": "Input sanitized before processing, segment creation fails with 'Invalid segment name' error, no database modification, security event logged with user_id and timestamp for audit",
-#       "compliance_check": "Security: SQL injection blocked, attempt logged for compliance review"
-#     }
-#   ]
-# }
-#
-# KEY BENEFITS OF COMBINED APPROACH:
-# ✅ Business context: "top cardiologists", "high prescribing volume" (from user_description)
-# ✅ Technical precision: "#segment-name", "#specialty-filter='Cardiology'" (from ui_data)
-# ✅ Executable: Playwright can use exact selectors immediately
-# ✅ Business-relevant: Tests what actually matters to stakeholders
+FEW_SHOT_EXAMPLES:
+  - example: "Login Page"
+    ui_data:
+      inputs:
+        - label: "Email"
+          type: "email"
+        - label: "Password"
+          type: "password"
+      buttons:
+        - text: "Login"
+      links:
+        - text: "Forgot Password?"
+    output:
+      positive_scenarios:
+        - "User logs in with email 'john.doe@healthcare.com' and password 'SecurePass123!' and sees 'Welcome, John' message on Dashboard"
+        - "User authenticates with email 'admin@company.com' and password 'Admin@2024', is redirected to /dashboard, and sees user profile icon"
+        - "User logs in with email 'test.user@clinic.org' and password 'Test!Pass99', session cookie is set, and last login timestamp updates"
+      edge_cases:
+        - "User enters 254-character email and valid password 'Pass123!', system accepts and displays Dashboard successfully"
+        - "User clicks Login with only Email filled (no password), system shows 'Password is required' validation error"
+        - "User enters email 'user+tag@domain.com' (with plus sign) and password 'Valid123!', system accepts and logs in successfully"
+      negative_scenarios:
+        - "User enters SQL injection 'admin' OR '1'='1' -- in email field, system shows 'Invalid email format' and blocks login"
+        - "User enters wrong password 'WrongPass' for email 'test@test.com', system shows 'Invalid credentials' error"
+        - "User leaves both fields empty and clicks Login, system shows 'Email and Password are required' validation error"
 
-# Domain-Specific Example (Healthcare/HCP):
-# When domain_context includes "Healthcare Professional (HCP) application" and compliance_requirements includes "HIPAA":
-# {
-#   "scenarios": [
-#     {
-#       "name": "Create cardiology segment with prescribing filters",
-#       "type": "positive",
-#       "user_goal": "User creates HCP segment filtering cardiologists in California with high Rx volume",
-#       "expected_outcome": "Segment created, shows HCP count, filters applied: specialty=Cardiology, state=CA, Rx>100",
-#       "compliance_check": "HIPAA: PII masked in list view, full access requires authorization"
-#     }
-#   ]
-# }
+  - example: "Search and Filter Page"
+    ui_data:
+      inputs:
+        - placeholder: "Search by HCP name"
+      dropdowns:
+        - label: "Specialty"
+          options: ["All", "Cardiology", "Neurology"]
+        - label: "State"
+          options: ["All", "NY", "CA", "TX"]
+      buttons:
+        - text: "Apply Filters"
+        - text: "Reset"
+    output:
+      positive_scenarios:
+        - "User searches for 'Dr. Smith', clicks Apply Filters, and sees results table showing 'Dr. Smith' entries with NPI numbers"
+        - "User selects Specialty 'Cardiology', State 'NY', clicks Apply Filters, and sees 'Showing 45 Cardiologists in NY' message"
+        - "User applies filters (Specialty: 'Neurology', State: 'CA'), sees filtered list, and API returns 200 with matching HCP data"
+        - "User clicks Reset after applying filters, all dropdowns return to 'All', and sees 'Showing all results' message"
+      edge_cases:
+        - "User searches for name with special characters 'Dr. O'Brien-Smith' and sees matching results displayed correctly"
+        - "User applies all filters simultaneously (Name: 'Johnson', Specialty: 'Cardiology', State: 'CA') and sees combined results"
+        - "User enters 100-character search term, clicks Apply, system processes without error showing results or 'No matches'"
+      negative_scenarios:
+        - "User searches for non-existent HCP 'XYZ123NonExistent', clicks Apply, sees 'No results found. Try adjusting filters'"
+        - "User attempts SQL injection in search 'Smith' OR '1'='1', system sanitizes input and returns safe 'No results found'"
+        - "User clicks Apply without selecting any criteria, system shows 'Please select at least one filter' validation message"
+
+# Variable placeholders for dynamic content
+user_description: "{user_description}"
+ui_data: "{ui_data}"
+domain_context: "{domain_context}"
+compliance_requirements: "{compliance_requirements}"
+format_instructions: "{format_instructions}"

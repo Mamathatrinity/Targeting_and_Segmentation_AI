@@ -6,35 +6,66 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
-from playwright.sync_api import sync_playwright, Browser, Page
+from playwright.sync_api import sync_playwright, Browser, Page, Playwright
 import httpx
 import pymysql
 from contextlib import asynccontextmanager
 import uvicorn
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 # Global resources
 browser: Optional[Browser] = None
 page: Optional[Page] = None
+playwright: Optional[Playwright] = None
+executor = ThreadPoolExecutor(max_workers=1)
+
+# Browser context pool for parallel testing
+contexts: Dict[str, Any] = {}
+import uuid
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Initialize and cleanup resources"""
-    global browser, page
+    global browser, page, playwright
     
-    # Startup: Initialize browser
-    playwright = sync_playwright().start()
-    browser = playwright.chromium.launch(headless=True)
-    page = browser.new_page()
+    # Startup: Initialize browser in thread
+    def init_browser():
+        global playwright, browser, page
+        playwright = sync_playwright().start()
+        browser = playwright.chromium.launch(headless=True)
+        page = browser.new_page()
+        return True
+    
+    await asyncio.get_event_loop().run_in_executor(executor, init_browser)
     print("✓ MCP Server: Browser initialized")
     
     yield
     
-    # Shutdown: Cleanup
-    if page:
-        page.close()
-    if browser:
-        browser.close()
+    # Shutdown: Cleanup (graceful, ignore errors)
+    def cleanup():
+        global browser, page, playwright
+        try:
+            if page:
+                page.close()
+        except:
+            pass
+        try:
+            if browser:
+                browser.close()
+        except:
+            pass
+        try:
+            if playwright:
+                playwright.stop()
+        except:
+            pass
+    
+    try:
+        await asyncio.get_event_loop().run_in_executor(executor, cleanup)
+    except:
+        pass
     print("✓ MCP Server: Resources cleaned up")
 
 
@@ -105,13 +136,13 @@ class ExtractUIRequest(BaseModel):
 @app.post("/browser/navigate")
 async def navigate(request: NavigateRequest):
     """Navigate to URL"""
-    try:
+    def _navigate():
         page.goto(request.url, wait_until=request.wait_until, timeout=request.timeout)
-        return {
-            "success": True,
-            "url": page.url,
-            "title": page.title()
-        }
+        return {"success": True, "url": page.url, "title": page.title()}
+    
+    try:
+        result = await asyncio.get_event_loop().run_in_executor(executor, _navigate)
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -119,11 +150,15 @@ async def navigate(request: NavigateRequest):
 @app.post("/browser/fill")
 async def fill_field(request: FillFieldRequest):
     """Fill input field"""
-    try:
+    def _fill():
         if request.clear_first:
             page.fill(request.selector, "")
         page.fill(request.selector, request.value)
         return {"success": True, "selector": request.selector}
+    
+    try:
+        result = await asyncio.get_event_loop().run_in_executor(executor, _fill)
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -131,9 +166,13 @@ async def fill_field(request: FillFieldRequest):
 @app.post("/browser/click")
 async def click_element(request: ClickRequest):
     """Click element"""
-    try:
+    def _click():
         page.click(request.selector, timeout=request.timeout)
         return {"success": True, "selector": request.selector}
+    
+    try:
+        result = await asyncio.get_event_loop().run_in_executor(executor, _click)
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -141,10 +180,8 @@ async def click_element(request: ClickRequest):
 @app.post("/browser/extract-ui")
 async def extract_ui(request: ExtractUIRequest):
     """Extract UI elements"""
-    try:
+    def _extract():
         page.goto(request.url, wait_until="networkidle", timeout=30000)
-        
-        # Extract all interactive elements
         ui_data = page.evaluate("""
             () => {
                 const results = {
@@ -183,13 +220,11 @@ async def extract_ui(request: ExtractUIRequest):
                 return results;
             }
         """)
-        
-        return {
-            "success": True,
-            "url": page.url,
-            "title": page.title(),
-            "ui_data": ui_data
-        }
+        return {"success": True, "url": page.url, "title": page.title(), "ui_data": ui_data}
+    
+    try:
+        result = await asyncio.get_event_loop().run_in_executor(executor, _extract)
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -197,12 +232,48 @@ async def extract_ui(request: ExtractUIRequest):
 @app.get("/browser/screenshot")
 async def take_screenshot():
     """Take screenshot"""
-    try:
+    def _screenshot():
         screenshot = page.screenshot()
-        return {
-            "success": True,
-            "screenshot": screenshot.hex()
-        }
+        return {"success": True, "screenshot": screenshot.hex()}
+    
+    try:
+        result = await asyncio.get_event_loop().run_in_executor(executor, _screenshot)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/browser/context/create")
+async def create_context():
+    """Create new browser context for parallel testing"""
+    def _create():
+        context_id = str(uuid.uuid4())
+        context = browser.new_context()
+        new_page = context.new_page()
+        contexts[context_id] = {"context": context, "page": new_page}
+        return {"success": True, "context_id": context_id}
+    
+    try:
+        result = await asyncio.get_event_loop().run_in_executor(executor, _create)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/browser/context/close")
+async def close_context(context_id: str):
+    """Close browser context"""
+    def _close():
+        if context_id in contexts:
+            contexts[context_id]["page"].close()
+            contexts[context_id]["context"].close()
+            del contexts[context_id]
+            return {"success": True, "context_id": context_id}
+        return {"success": False, "error": "Context not found"}
+    
+    try:
+        result = await asyncio.get_event_loop().run_in_executor(executor, _close)
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -306,7 +377,31 @@ async def health_check():
     return {
         "status": "healthy",
         "browser": "running" if browser else "stopped",
+        "active_contexts": len(contexts),
         "version": "1.0.0"
+    }
+
+
+@app.get("/")
+async def root():
+    """Root endpoint - server info"""
+    return {
+        "service": "MCP Browser Automation Server",
+        "version": "1.0.0",
+        "browser_status": "running" if browser else "stopped",
+        "parallel_contexts": len(contexts),
+        "endpoints": {
+            "docs": "/docs",
+            "health": "/health",
+            "browser": "/browser/*",
+            "contexts": "/browser/context/*"
+        },
+        "features": [
+            "Single page automation",
+            "Parallel browser contexts",
+            "API testing",
+            "Database validation"
+        ]
     }
 
 
