@@ -67,13 +67,16 @@ class PlannerAgent:
         
         # Get focus area if provided
         focus_area = ui_data.get("focus_area", "")
-        focus_instruction = ""
-        if focus_area == "authentication":
-            focus_instruction = "Focus ONLY on: Login flows, session management, password validation, remember me, account lockout, multi-factor auth"
-        elif focus_area == "security":
-            focus_instruction = "Focus ONLY on: SQL injection, XSS, CSRF, brute force, rate limiting, unauthorized access, session hijacking"
-        elif focus_area == "ux":
-            focus_instruction = "Focus ONLY on: Browser behaviors, tab navigation, copy-paste, autofill, keyboard shortcuts, back/forward buttons, form validation UX"
+        focus_instruction = ui_data.get("focus_instruction", "")  # From modules_config
+        
+        # Fallback built-in instructions if not from config
+        if not focus_instruction:
+            if focus_area == "authentication":
+                focus_instruction = "Focus ONLY on: Login flows, session management, password validation, remember me, account lockout, multi-factor auth"
+            elif focus_area == "security":
+                focus_instruction = "Focus ONLY on: SQL injection, XSS, CSRF, brute force, rate limiting, unauthorized access, session hijacking"
+            elif focus_area == "ux":
+                focus_instruction = "Focus ONLY on: Browser behaviors, tab navigation, copy-paste, autofill, keyboard shortcuts, back/forward buttons, form validation UX"
         
         # Format YAML prompt with BOTH natural language + UI data (combined approach)
         formatted_prompt = format_prompt(

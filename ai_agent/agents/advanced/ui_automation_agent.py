@@ -16,7 +16,7 @@ import json
 import time
 from typing import Dict, List, Any, Union
 from playwright.sync_api import sync_playwright, Page
-from ai_agent.langfuse_tracker import tracker
+from ai_agent.langfuse_tracker import get_tracker
 import yaml
 
 
@@ -83,30 +83,29 @@ class UIAutomationAgent:
             browser = p.chromium.launch(headless=headless)
             page = browser.new_page()
             
-            with tracker.trace_agent("ui_automation_agent"):
-                # Execute each test (NO LOOPS - single pass)
-                for idx, test_case in enumerate(test_cases, 1):
-                    # Check timeout
-                    if self._is_timeout():
-                        summary["test_results"].append({
-                            "test_number": idx,
-                            "name": test_case.get("name", f"Test {idx}"),
-                            "status": "skipped",
-                            "reason": f"Timeout: Exceeded {MAX_EXECUTION_TIME_MINUTES} minutes"
-                        })
-                        continue
-                    
-                    # Execute single test (NO RETRIES)
-                    result = self._execute_single_test(page, test_case, base_url, idx)
-                    summary["test_results"].append(result)
-                    
-                    if result["status"] == "passed":
-                        summary["passed"] += 1
-                    else:
-                        summary["failed"] += 1
-                    
-                    # Brief pause between tests
-                    time.sleep(0.5)
+            # Execute each test (NO LOOPS - single pass)
+            for idx, test_case in enumerate(test_cases, 1):
+                # Check timeout
+                if self._is_timeout():
+                    summary["test_results"].append({
+                        "test_number": idx,
+                        "name": test_case.get("name", f"Test {idx}"),
+                        "status": "skipped",
+                        "reason": f"Timeout: Exceeded {MAX_EXECUTION_TIME_MINUTES} minutes"
+                    })
+                    continue
+                
+                # Execute single test (NO RETRIES)
+                result = self._execute_single_test(page, test_case, base_url, idx)
+                summary["test_results"].append(result)
+                
+                if result["status"] == "passed":
+                    summary["passed"] += 1
+                else:
+                    summary["failed"] += 1
+                
+                # Brief pause between tests
+                time.sleep(0.5)
             
             browser.close()
         
@@ -115,7 +114,11 @@ class UIAutomationAgent:
         # Group failures by similarity
         summary["failure_groups"] = self._group_failures(summary["test_results"])
         
-        tracker.flush()
+        # Flush tracker if enabled
+        tracker = get_tracker()
+        if tracker and tracker.enabled:
+            tracker.flush()
+        
         return summary
     
     def _execute_single_test(

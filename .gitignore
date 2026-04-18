@@ -31,6 +31,12 @@ allure-results/
 playwright-report/
 test-results/
 
+# Screenshots (auto-generated during test runs)
+screenshots/
+
+# Browser session state
+storage_state.json
+
 # OS
 .DS_Store
 Thumbs.db
