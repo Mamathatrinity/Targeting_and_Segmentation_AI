@@ -1,0 +1,162 @@
+{
+  "modules": [
+    {
+      "name": "Login",
+      "module_id": "login",
+      "url": "/login",
+      "focus_areas": ["authentication", "security", "ux"],
+      "ui_data": {
+        "url": "https://ce-ts-dev.trinitylifesciences.com/login",
+        "module": "Login",
+        "inputs": [
+          {"label": "Email", "type": "email", "placeholder": "Enter email"},
+          {"label": "Password", "type": "password", "placeholder": "Enter password"}
+        ],
+        "buttons": [{"text": "Login", "type": "submit"}],
+        "links": [{"text": "Forgot Password?", "href": "/forgot-password"}]
+      }
+    },
+    {
+      "name": "HCP Search and Filter",
+      "module_id": "hcp_search",
+      "url": "/search",
+      "focus_areas": ["search_basic", "filters", "results_display", "pagination", "export", "security", "ux"],
+      "ui_data": {
+        "url": "https://ce-ts-dev.trinitylifesciences.com/search",
+        "module": "HCP Search and Filter",
+        "inputs": [
+          {"label": "Search by Name", "type": "text", "placeholder": "Enter HCP name"},
+          {"label": "NPI Number", "type": "text", "placeholder": "Enter 10-digit NPI"},
+          {"label": "Zip Code", "type": "text", "placeholder": "Enter zip code"}
+        ],
+        "dropdowns": [
+          {"label": "Specialty", "options": ["Cardiology", "Oncology", "Neurology", "Dermatology", "All"]},
+          {"label": "State", "options": ["CA", "NY", "TX", "FL", "All"]},
+          {"label": "Results Per Page", "options": ["10", "25", "50", "100"]}
+        ],
+        "buttons": [
+          {"text": "Search", "type": "submit"},
+          {"text": "Clear Filters", "type": "reset"},
+          {"text": "Export to Excel", "type": "button"},
+          {"text": "Save Search", "type": "button"}
+        ],
+        "table": {
+          "columns": ["HCP Name", "NPI", "Specialty", "Address", "Phone", "Segment", "Actions"]
+        },
+        "pagination": {"has_prev": true, "has_next": true}
+      }
+    },
+    {
+      "name": "Dashboard",
+      "module_id": "dashboard",
+      "url": "/dashboard",
+      "focus_areas": ["widgets", "navigation", "data_display", "filters", "export", "ux"],
+      "ui_data": {
+        "url": "https://ce-ts-dev.trinitylifesciences.com/dashboard",
+        "module": "Dashboard",
+        "cards": [
+          {"title": "Total HCPs", "type": "count"},
+          {"title": "Active Segments", "type": "count"},
+          {"title": "Pending Reviews", "type": "count"},
+          {"title": "Last Updated", "type": "timestamp"}
+        ],
+        "charts": [
+          {"title": "HCPs by Specialty", "type": "pie"},
+          {"title": "Segment Trends", "type": "line"},
+          {"title": "Geographic Distribution", "type": "map"}
+        ],
+        "buttons": [
+          {"text": "Create Segment", "type": "button"},
+          {"text": "Export Report", "type": "button"},
+          {"text": "Refresh", "type": "button"}
+        ],
+        "dropdowns": [
+          {"label": "Date Range", "options": ["Last 7 Days", "Last 30 Days", "Last Quarter", "Custom"]},
+          {"label": "Region", "options": ["All Regions", "North", "South", "East", "West"]}
+        ]
+      }
+    },
+    {
+      "name": "HCP Profile",
+      "module_id": "hcp_profile",
+      "url": "/hcp/{id}",
+      "focus_areas": ["profile_view", "profile_edit", "segments", "history", "security", "ux"],
+      "ui_data": {
+        "url": "https://ce-ts-dev.trinitylifesciences.com/hcp/profile",
+        "module": "HCP Profile",
+        "inputs": [
+          {"label": "First Name", "type": "text"},
+          {"label": "Last Name", "type": "text"},
+          {"label": "NPI", "type": "text"},
+          {"label": "Email", "type": "email"},
+          {"label": "Phone", "type": "tel"},
+          {"label": "Address", "type": "text"}
+        ],
+        "dropdowns": [
+          {"label": "Specialty", "options": ["Cardiology", "Oncology", "Neurology"]},
+          {"label": "Status", "options": ["Active", "Inactive", "Pending"]}
+        ],
+        "tabs": ["Overview", "Segments", "Activity History", "Notes"],
+        "buttons": [
+          {"text": "Edit Profile", "type": "button"},
+          {"text": "Save Changes", "type": "submit"},
+          {"text": "Cancel", "type": "button"},
+          {"text": "Add to Segment", "type": "button"},
+          {"text": "Export Profile", "type": "button"}
+        ]
+      }
+    },
+    {
+      "name": "Segments",
+      "module_id": "segments",
+      "url": "/segments",
+      "focus_areas": ["create_segment", "edit_segment", "segment_rules", "assignment", "export", "security", "ux"],
+      "ui_data": {
+        "url": "https://ce-ts-dev.trinitylifesciences.com/segments",
+        "module": "Segments",
+        "inputs": [
+          {"label": "Segment Name", "type": "text", "placeholder": "Enter segment name"},
+          {"label": "Description", "type": "textarea"},
+          {"label": "Criteria", "type": "text"}
+        ],
+        "dropdowns": [
+          {"label": "Segment Type", "options": ["Top Prescribers", "High Potential", "Custom"]},
+          {"label": "Status", "options": ["Active", "Draft", "Archived"]},
+          {"label": "Specialty Filter", "options": ["All", "Cardiology", "Oncology"]}
+        ],
+        "buttons": [
+          {"text": "Create Segment", "type": "submit"},
+          {"text": "Edit", "type": "button"},
+          {"text": "Delete", "type": "button"},
+          {"text": "Assign HCPs", "type": "button"},
+          {"text": "Export", "type": "button"},
+          {"text": "Clone Segment", "type": "button"}
+        ],
+        "table": {
+          "columns": ["Segment Name", "Type", "HCP Count", "Status", "Created Date", "Actions"]
+        }
+      }
+    }
+  ],
+  "focus_area_instructions": {
+    "authentication": "Focus on login flows, session management, password validation, remember me, account lockout",
+    "security": "Focus on SQL injection, XSS, CSRF, brute force, rate limiting, unauthorized access",
+    "ux": "Focus on browser behaviors, tab navigation, copy-paste, autofill, keyboard shortcuts, responsive design",
+    "search_basic": "Focus on text search, NPI search, name search, partial matches, exact matches, case sensitivity",
+    "filters": "Focus on single filter, multiple filter combinations, filter reset, filter persistence, dropdown selections",
+    "results_display": "Focus on table sorting, column visibility, row selection, data accuracy, empty states, loading states",
+    "pagination": "Focus on page navigation, results per page, first/last page, page number input, total count display",
+    "export": "Focus on Excel export, PDF export, data completeness in export, export with filters applied, large dataset export",
+    "widgets": "Focus on card data accuracy, chart rendering, real-time updates, widget interactions, data refresh",
+    "navigation": "Focus on menu navigation, breadcrumbs, quick links, module switching, back navigation",
+    "data_display": "Focus on data accuracy, formatting, sorting, filtering, empty states, data refresh",
+    "profile_view": "Focus on profile data display, field visibility, read-only vs editable fields, data accuracy",
+    "profile_edit": "Focus on field validation, save/cancel flows, required fields, data type validation, concurrent editing",
+    "segments": "Focus on segment assignment, removal, bulk operations, segment rules, HCP eligibility",
+    "history": "Focus on activity log, audit trail, date filtering, action types, user attribution",
+    "create_segment": "Focus on segment creation flow, name validation, duplicate names, required fields",
+    "edit_segment": "Focus on edit existing segment, field validation, save changes, cancel editing",
+    "segment_rules": "Focus on rule creation, rule combinations, AND/OR logic, rule validation, rule preview",
+    "assignment": "Focus on assigning HCPs to segments, bulk assignment, removal, eligibility checks"
+  }
+}

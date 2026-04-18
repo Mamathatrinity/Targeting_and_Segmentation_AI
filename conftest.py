@@ -60,69 +60,69 @@ def browser(playwright_instance):
     """Launch browser for the session."""
     browser = playwright_instance.chromium.launch(
         headless=False,
-        slow_mo=100,
-        args=["--no-sandbox", "--disable-gpu"]
+        slow_mo=600,   # Slowed down so you can see every action clearly
+        args=["--no-sandbox", "--disable-gpu", "--incognito", "--start-maximized"]
     )
     yield browser
     browser.close()
 
 
+@pytest.fixture(scope="function")
+def page(browser) -> Page:
+    """
+    Fresh unauthenticated page per test — for login tests.
+    Each test gets its own browser context starting from logged-out state.
+    """
+    context = browser.new_context(ignore_https_errors=True)
+    pg = context.new_page()
+    yield pg
+    pg.close()
+    context.close()
+
+
 @pytest.fixture(scope="session")
-def browser_context(browser):
+def authenticated_page(browser) -> Page:
     """
-    Create browser context with saved authentication state if available.
-    
-    Note: This uses session-level context. For fresh context per test,
-    use the 'fresh_page' fixture instead.
+    Authenticated page that reuses session across all tests.
+    Login once with MFA, then all tests use the saved session.
+    Use this for non-login tests to avoid MFA prompts.
     """
-    # Try to use existing storage state
-    if os.path.exists(STORAGE_PATH) and is_storage_state_fresh(STORAGE_PATH, SESSION_EXPIRY_SECONDS):
-        context = browser.new_context(storage_state=STORAGE_PATH)
-        print(f"✅ Loaded existing session from {STORAGE_PATH}")
-    else:
-        context = browser.new_context()
-        print("🔑 Creating new browser context (login may be required)")
+    # Check if we have a fresh saved session
+    if is_storage_state_fresh(STORAGE_PATH, SESSION_EXPIRY_SECONDS):
+        context = browser.new_context(storage_state=STORAGE_PATH, ignore_https_errors=True)
+        pg = context.new_page()
+        yield pg
+        pg.close()
+        context.close()
+        return
     
-    yield context
+    # No saved session - need to login with MFA once
+    context = browser.new_context(ignore_https_errors=True)
+    pg = context.new_page()
     
-    # Save storage state for next session
-    try:
-        context.storage_state(path=STORAGE_PATH)
-    except Exception as e:
-        print(f"⚠️ Could not save storage state: {e}")
+    # Perform login
+    from pages.login_page import LoginPage
+    login = LoginPage(pg)
+    email = os.getenv("USER_EMAIL", "mv@trinitypartners.com")
+    password = os.getenv("USER_PASSWORD", "Mamatha1997@trinity")
+    login.login(email, password)
     
+    # Save authenticated session
+    context.storage_state(path=STORAGE_PATH)
+    
+    yield pg
+    pg.close()
     context.close()
 
 
 @pytest.fixture(scope="function")
-def page(browser_context) -> Page:
-    """
-    Create a new page for each test function.
-    Uses shared browser context (maintains login state).
-    """
-    page = browser_context.new_page()
-    page.goto(BASE_URL, wait_until="domcontentloaded", timeout=30000)
-    yield page
-    page.close()
-
-
-@pytest.fixture(scope="function")
-def fresh_page(browser_context) -> Page:
-    """
-    Create a fresh page with cleared storage (for login/logout tests).
-    """
-    page = browser_context.new_page()
-    page.goto(BASE_URL, wait_until="domcontentloaded")
-    
-    try:
-        # Clear storage for fresh state
-        page.evaluate("() => { localStorage.clear(); sessionStorage.clear(); }")
-        browser_context.clear_cookies()
-    except Exception as e:
-        print(f"⚠️ Skipping storage clear: {e}")
-    
-    yield page
-    page.close()
+def fresh_page(browser) -> Page:
+    """Alias for page — completely fresh unauthenticated context per test."""
+    context = browser.new_context(ignore_https_errors=True)
+    pg = context.new_page()
+    yield pg
+    pg.close()
+    context.close()
 
 
 # ============================================
@@ -223,11 +223,11 @@ def screenshot_on_failure(request, page):
         
         try:
             page.screenshot(path=screenshot_path, full_page=True)
-            print(f"📸 Screenshot saved: {screenshot_path}")
+            print(f"[SCREENSHOT] Saved: {screenshot_path}")
         except Exception as e:
-            print(f"❌ Failed to take screenshot: {e}")
+            print(f"[ERROR] Failed to take screenshot: {e}")
     else:
-        print(f"✅ Test {test_name} PASSED")
+        print(f"[PASS] Test {test_name} PASSED")
 
 
 # ============================================
