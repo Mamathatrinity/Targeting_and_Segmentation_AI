@@ -48,3 +48,13 @@ openpyxl>=3.1.0
 
 # Data validation
 pydantic>=2.0.0
+
+# ===== RAG (Retrieval Augmented Generation) =====
+# Vector store for CE-TS domain knowledge base
+faiss-cpu>=1.7.4
+
+# Embeddings model (runs locally, no API cost)
+sentence-transformers>=2.2.2
+
+# LangChain community integrations (FAISS, HuggingFace)
+langchain-community>=0.0.20
