@@ -4,8 +4,8 @@ Integrates all 4 intelligence layers without complexity
 """
 
 from typing import Dict, Any, List
-from ai_agent.agents.strategy import StrategyAgent
-from ai_agent.agents.decision_engine import DecisionEngine
+from ai_agent.agents.planner import PlannerAgent
+from ai_agent.agents.validator import ValidatorAgent
 from ai_agent.agents.coverage_analyzer import CoverageAnalyzer
 from ai_agent.agents.cross_layer_validator import CrossLayerValidator
 from ai_agent.agents.report_generator import ReportGenerator
@@ -25,31 +25,26 @@ def run_enhanced_workflow(url: str, module_name: str = "test", business_context:
     print(f"ENHANCED WORKFLOW - {module_name.upper()}")
     print(f"{'='*60}\n")
     
-    # Initialize components
-    from ai_agent.config import AIConfig
-    config = {
-        "azure_deployment": AIConfig.AZURE_DEPLOYMENT,
-        "api_version": AIConfig.API_VERSION
-    }
-    
-    strategy_agent = StrategyAgent(config)
-    decision_engine = DecisionEngine()
+    # Initialize components (merged: Strategy+Planner in one, Validator+Decision in one)
+    planner_agent = PlannerAgent()
+    validator_agent = ValidatorAgent()
     coverage_analyzer = CoverageAnalyzer()
     cross_layer_validator = CrossLayerValidator()
     report_generator = ReportGenerator()
-    
-    # STEP 1: Strategy - Decide testing approach
-    print("🧠 Step 1: Strategy Planning...")
-    strategy = strategy_agent.decide_strategy(
-        module=module_name,
-        business_context=business_context,
-        previous_failures=previous_failures
-    )
-    
-    print(f"   Priority: {strategy.priority.upper()}")
-    print(f"   Depth: {strategy.depth}")
-    print(f"   Focus: {', '.join(strategy.focus_areas[:3])}")
-    print(f"   Rationale: {strategy.rationale}\n")
+
+    # STEP 1: Strategy + Planning (1 LLM call — merged)
+    print("🧠 Step 1: Strategy + Planning (merged, 1 LLM call)...")
+    plan = planner_agent.generate_scenarios({
+        "url": url,
+        "module_name": module_name,
+        "user_description": business_context or "Test all features thoroughly",
+        "previous_failures": previous_failures or [],
+    })
+
+    print(f"   Priority: {plan.get('priority', 'medium').upper()}")
+    print(f"   Depth: {plan.get('depth', 'medium')}")
+    print(f"   Focus: {', '.join(plan.get('focus_areas', [])[:3])}")
+    print(f"   Rationale: {plan.get('rationale', '')}\n")
     
     # STEP 2: Run original workflow (test generation + execution)
     print("⚙️  Step 2: Executing Tests...")
@@ -60,12 +55,18 @@ def run_enhanced_workflow(url: str, module_name: str = "test", business_context:
     test_cases = original_results.get("test_plan", {}).get("test_cases", [])
     execution_results = original_results.get("execution_results", {}).get("detailed_results", [])
     
-    # STEP 3: Decision Engine - Prioritize (for next run)
-    print("🎯 Step 3: Test Prioritization...")
-    decisions = decision_engine.prioritize_tests(test_cases, module_name)
-    execution_plan = decision_engine.get_execution_plan(decisions)
-    print(f"   Tests to run: {execution_plan['to_run']}/{execution_plan['total_tests']}")
-    print(f"   Estimated time: {execution_plan['estimated_time_minutes']} minutes\n")
+    # STEP 3: Validation + Decision (1 LLM call — merged)
+    print("🎯 Step 3: Validation + Decision (merged, 1 LLM call)...")
+    validation = validator_agent.validate_results(
+        execution_results=original_results.get("execution_results", {}),
+        module_name=module_name,
+    )
+    to_run   = len(validation.get("tests_to_rerun", []))
+    to_skip  = len(validation.get("tests_to_skip_next", []))
+    priority = validation.get("priority_tests_next_run", [])
+    print(f"   Tests to rerun: {to_run}")
+    print(f"   Tests to skip next: {to_skip}")
+    print(f"   Priority next run: {', '.join(priority[:3])}\n")
     
     # STEP 4: Coverage Analysis - Find gaps
     print("📊 Step 4: Coverage Analysis...")
@@ -95,7 +96,7 @@ def run_enhanced_workflow(url: str, module_name: str = "test", business_context:
     print("📝 Step 6: Generating Report...")
     report = report_generator.generate_report(
         module=module_name,
-        strategy=strategy.dict(),
+        strategy=plan,
         execution_results=execution_results,
         coverage=coverage,
         cross_layer=cross_layer_result
@@ -107,8 +108,12 @@ def run_enhanced_workflow(url: str, module_name: str = "test", business_context:
     # Combine all results
     enhanced_results = {
         **original_results,
-        "strategy": strategy.dict(),
-        "execution_plan": execution_plan,
+        "strategy": plan,
+        "decisions": {
+            "tests_to_rerun":        validation.get("tests_to_rerun", []),
+            "tests_to_skip_next":    validation.get("tests_to_skip_next", []),
+            "priority_tests_next_run": validation.get("priority_tests_next_run", []),
+        },
         "coverage_analysis": coverage,
         "cross_layer_validation": cross_layer_result,
         "comprehensive_report": report

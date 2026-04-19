@@ -1,26 +1,3 @@
-# ─────────────────────────────────────────────────────────────────────────
-# MERGED: Strategy + RAG + Planning  →  1 LLM call
-# Replaces two separate calls (StrategyAgent + PlannerAgent)
-# Backup of original prompts in: ai_agent/prompts/backup/
-# ─────────────────────────────────────────────────────────────────────────
-
-STRATEGY: |
-  Before generating scenarios, decide the testing strategy for this module.
-  Use the MODULE STRATEGY hint and DOMAIN KNOWLEDGE below.
-
-  STRATEGY RULES:
-  - Login / Auth modules          → priority: critical, depth: deep
-  - Business logic (segmentation, rules, filters) → priority: high, depth: deep
-  - Dashboard / Reports / UI only → priority: medium, depth: light
-  - If previous failures exist    → increase depth by one level
-  - Complex modules (segmentation, target_lists, universe_summary) → use domain knowledge
-
-  MODULE STRATEGY: {module_strategy}
-
-DOMAIN_KNOWLEDGE: |
-  Retrieved domain context for this module (RAG, k=2 — use only if relevant):
-  {rag_context}
-
 GOAL: |
   Generate COMPREHENSIVE test case scenarios from UI data that are specific, actionable, and Excel-ready.
   Each scenario must include: WHAT to test, WITH WHAT data, and EXPECT WHAT result.
@@ -296,6 +273,3 @@ ui_data: "{ui_data}"
 domain_context: "{domain_context}"
 compliance_requirements: "{compliance_requirements}"
 format_instructions: "{format_instructions}"
-# Merged: strategy + RAG placeholders
-module_strategy: "{module_strategy}"
-rag_context: "{rag_context}"

@@ -1,6 +1,8 @@
 """
-Validator Agent
-Analyzes test results and identifies failure root causes using AI
+Validator Agent  (merged: Validator + Decision Engine → 1 LLM call)
+Analyzes test results, identifies failure root causes, AND decides which
+tests to rerun, skip, or prioritise — all in a single LLM call.
+Backup of the separate files: ai_agent/agents/backup/decision_engine.py
 """
 from langchain_openai import AzureChatOpenAI
 from langchain_core.prompts import PromptTemplate
@@ -17,8 +19,22 @@ from ai_agent.utils.prompt_loader import load_prompt
 from ai_agent.utils.prompt_formatter import format_prompt
 
 
+# ── Rule-based priority (zero LLM cost, runs locally) ─────────────────────
+_CRITICAL_KEYWORDS = {"login", "auth", "security", "payment", "mfa", "sso"}
+_HIGH_KEYWORDS     = {"segment", "targeting", "filter", "rule", "universe"}
+_LOW_KEYWORDS      = {"color", "style", "layout", "font", "tooltip"}
+
+def _local_priority(test_name: str) -> int:
+    """Return 1–5 priority without any LLM call."""
+    name = test_name.lower()
+    if any(k in name for k in _CRITICAL_KEYWORDS): return 1
+    if any(k in name for k in _HIGH_KEYWORDS):     return 2
+    if any(k in name for k in _LOW_KEYWORDS):      return 4
+    return 3
+
+
 class ValidatorAgent:
-    """Analyzes test execution results"""
+    """Analyzes test execution results + decides next actions (merged: Validator + Decision Engine)"""
     
     def __init__(self):
         # Validate configuration
@@ -37,15 +53,18 @@ class ValidatorAgent:
         # Load YAML prompt template
         self.prompt_data = load_prompt("validator.yaml")
     
-    def validate_results(self, execution_results: Dict) -> Dict:
+    def validate_results(self, execution_results: Dict, module_name: str = "general") -> Dict:
         """
-        Analyze test execution results
+        Analyze test results AND decide which tests to rerun / skip / prioritise.
+        Single LLM call replaces ValidatorAgent + DecisionEngine.
         
         Args:
             execution_results: Results from Executor
+            module_name: Module under test (for priority rules)
             
         Returns:
-            Analysis with root causes and recommendations
+            Analysis with root causes, recommendations, and decision fields:
+            tests_to_rerun, tests_to_skip_next, priority_tests_next_run
         """
         # Get Langfuse tracker
         tracker = get_tracker()
@@ -53,10 +72,29 @@ class ValidatorAgent:
         # Prepare compact summary for analysis
         summary = self._prepare_summary(execution_results)
         
-        # Format YAML prompt with variables
+        # ── Skip LLM entirely when zero failures (decision: all pass) ──────
+        if summary.get("failed", 0) == 0:
+            all_tests = [
+                r.get("test_name", "") for r in execution_results.get("results", [])
+            ]
+            all_tests.sort(key=lambda n: _local_priority(n))
+            return {
+                "status": "passed",
+                "failure_count": 0,
+                "root_causes": [],
+                "recommendations": ["All tests passed. Consider adding more edge cases."],
+                "confidence": "high",
+                # Decision fields
+                "tests_to_rerun": [],
+                "tests_to_skip_next": [],
+                "priority_tests_next_run": all_tests[:5],
+            }
+        
+        # Format YAML prompt with variables + module context for decisions
         formatted_prompt = format_prompt(
             self.prompt_data,
-            results_summary=json.dumps(summary, indent=2)
+            results_summary=json.dumps(summary, indent=2),
+            module_name=module_name,
         )
         
         # Check cache first (50-70% cost savings)
@@ -80,7 +118,8 @@ class ValidatorAgent:
             metadata={
                 "total_tests": summary.get("total_tests", 0),
                 "failed": summary.get("failed", 0),
-                "stage": "result_validation",
+                "stage": "validation_and_decision",
+                "module": module_name,
                 "cached": cached_response is not None
             }
         )
@@ -95,6 +134,19 @@ class ValidatorAgent:
                     content = content[4:]
             
             analysis = json.loads(content)
+            
+            # ── Enrich with local priority sort (zero LLM cost) ────────────
+            all_tests = [
+                r.get("test_name", "") for r in execution_results.get("results", [])
+            ]
+            all_tests.sort(key=lambda n: _local_priority(n))
+            # Ensure decision fields exist (LLM may omit them)
+            analysis.setdefault("tests_to_rerun", [
+                r["test_name"] for r in execution_results.get("results", [])
+                if r.get("status") == "failed"
+            ])
+            analysis.setdefault("tests_to_skip_next", [])
+            analysis.setdefault("priority_tests_next_run", all_tests[:5])
             
             # Track agent execution
             tracker.trace_agent(
@@ -113,8 +165,11 @@ class ValidatorAgent:
                 "failure_count": execution_results.get("summary", {}).get("failed", 0),
                 "root_causes": ["Unable to parse AI analysis"],
                 "recommendations": ["Review logs manually"],
-                "raw_response": response.content,
-                "confidence": "low"
+                "raw_response": response_content,
+                "confidence": "low",
+                "tests_to_rerun": [],
+                "tests_to_skip_next": [],
+                "priority_tests_next_run": [],
             }
     
     def _prepare_summary(self, execution_results: Dict) -> Dict:
@@ -141,18 +196,20 @@ class ValidatorAgent:
 
 
 # Standalone function for workflow
-def validator_agent(execution_results: Dict) -> Dict:
+def validator_agent(execution_results: Dict, module_name: str = "general") -> Dict:
     """
-    Analyze test execution results
+    Analyze test execution results + decide next actions.
+    Single LLM call (merged: ValidatorAgent + DecisionEngine).
     
     Args:
         execution_results: Results from executor
+        module_name: Module under test
         
     Returns:
-        AI analysis with root causes
+        AI analysis with root causes + decision fields
     """
     validator = ValidatorAgent()
-    return validator.validate_results(execution_results)
+    return validator.validate_results(execution_results, module_name)
 
 
 if __name__ == "__main__":

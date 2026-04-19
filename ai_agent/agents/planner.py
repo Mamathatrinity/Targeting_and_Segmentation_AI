@@ -1,12 +1,15 @@
 """
-Planner Agent
-Generates test scenarios from UI data using Azure GPT-4o
+Planner Agent  (merged: Strategy + RAG + Planner → 1 LLM call)
+Generates test scenarios from UI data using Azure GPT-4o.
+Includes: testing strategy (priority/depth/focus), RAG context for complex
+modules, and scenario generation — all in a single LLM call.
+Backup of the separate files: merged_planner_strategy.py / strategy.py
 """
 from langchain_openai import AzureChatOpenAI
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Literal, Optional
 import json
 
 import sys
@@ -17,17 +20,32 @@ from langfuse_tracker import get_tracker
 from ai_agent.utils.cache import get_cached_response, set_cached_response
 from ai_agent.utils.prompt_loader import load_prompt
 from ai_agent.utils.prompt_formatter import format_prompt
+from ai_agent.rag.rag_store import get_rag_store
 
 
 class TestScenarios(BaseModel):
-    """Structured output for test scenarios"""
+    """Structured output for test scenarios — now includes strategy fields"""
+    # ── Strategy fields (merged from StrategyAgent) ───────────────────────
+    priority: Literal["critical", "high", "medium", "low"] = Field(
+        default="medium", description="Testing priority for this module"
+    )
+    depth: Literal["light", "medium", "deep"] = Field(
+        default="medium", description="Testing depth"
+    )
+    focus_areas: List[str] = Field(
+        default_factory=list, description="Up to 3 key areas to focus on"
+    )
+    rationale: str = Field(
+        default="", description="One sentence: why this strategy and scenario mix"
+    )
+    # ── Scenario fields (original) ────────────────────────────────────────
     positive_scenarios: List[str] = Field(description="Valid user flows (max 5)")
     edge_cases: List[str] = Field(description="Edge cases to test (max 3)")
     negative_scenarios: List[str] = Field(description="Invalid/error scenarios (max 3)")
 
 
 class PlannerAgent:
-    """Plans test scenarios from UI data"""
+    """Plans test scenarios from UI data (merged: Strategy + RAG + Planner)"""
     
     def __init__(self):
         # Validate configuration
@@ -48,6 +66,9 @@ class PlannerAgent:
         
         # Load YAML prompt template
         self.prompt_data = load_prompt("planner.yaml")
+        
+        # RAG store — loaded once per agent instance (not per call)
+        self.rag = get_rag_store()
     
     def generate_scenarios(self, ui_data: dict) -> dict:
         """
@@ -65,7 +86,20 @@ class PlannerAgent:
         # Prepare compact UI data for token efficiency
         compact_ui = self._compact_ui_data(ui_data)
         
-        # Get focus area if provided
+        # ── RAG: retrieve domain context ONCE for complex modules (k=2) ────
+        module_name = ui_data.get("module_name", ui_data.get("focus_area", "general"))
+        rag_context = ""
+        if self.rag.is_complex_module(module_name):
+            print(f"[Planner] 🔍 RAG retrieval for '{module_name}' (k=2)...")
+            rag_context = self.rag.get_context(module_name, k=2)
+        
+        # ── Strategy context to inject into prompt ───────────────────────
+        module_strategy = (
+            f"Module: {module_name} | "
+            f"Previous failures: {', '.join(ui_data.get('previous_failures', [])) or 'None'}"
+        )
+        
+        # ── Focus area instruction ────────────────────────────────────────
         focus_area = ui_data.get("focus_area", "")
         focus_instruction = ui_data.get("focus_instruction", "")  # From modules_config
         
@@ -86,6 +120,8 @@ class PlannerAgent:
             domain_context="HCP Targeting & Segmentation: Medical specialties, segments, filters, NPI numbers, HIPAA compliance",
             compliance_requirements="HIPAA compliance, PII masking, data privacy, audit logging",
             focus_area=focus_instruction,  # Add focus area instruction
+            rag_context=rag_context or "No additional domain knowledge.",
+            module_strategy=module_strategy,
             format_instructions=self.parser.get_format_instructions()
         )
         
@@ -107,7 +143,13 @@ class PlannerAgent:
             model=AIConfig.AZURE_OPENAI_DEPLOYMENT,
             prompt=formatted_prompt,
             completion=response_content,
-            metadata={"url": ui_data.get("url", ""), "stage": "scenario_planning", "cached": cached_response is not None}
+            metadata={
+                "url": ui_data.get("url", ""),
+                "stage": "scenario_planning",
+                "cached": cached_response is not None,
+                "rag_used": bool(rag_context),
+                "module": module_name,
+            }
         )
         
         # Parse structured output

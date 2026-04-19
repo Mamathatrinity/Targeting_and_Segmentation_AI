@@ -156,13 +156,15 @@ class RetryWorkflow:
         print("NODE 2: MERGED PLAN GENERATION (1 LLM call)")
         print("="*60)
 
-        from ai_agent.agents.merged_planner_strategy import MergedPlannerStrategyAgent
-        agent = MergedPlannerStrategyAgent()
-        plan = agent.generate(
-            ui_data=state["ui_data"],
-            module_name=state.get("module_name", "general"),
-            business_context=state.get("business_context", ""),
-            previous_failures=state.get("previous_failures", []),
+        from ai_agent.agents.planner import PlannerAgent
+        agent = PlannerAgent()
+        plan = agent.generate_scenarios(
+            {
+                **state["ui_data"],
+                "module_name": state.get("module_name", "general"),
+                "user_description": state.get("business_context", ""),
+                "previous_failures": state.get("previous_failures", []),
+            }
         )
         print(f"  ✓ Priority={plan.get('priority')} | Depth={plan.get('depth')}")
         state["plan"] = plan
@@ -235,9 +237,9 @@ class RetryWorkflow:
         print("NODE 5: VALIDATION + DECISION (1 LLM call)")
         print("="*60)
 
-        from ai_agent.agents.merged_validator_decision import MergedValidatorDecisionAgent
-        agent = MergedValidatorDecisionAgent()
-        validation = agent.analyze(
+        from ai_agent.agents.validator import ValidatorAgent
+        agent = ValidatorAgent()
+        validation = agent.validate_results(
             execution_results=state["execution_results"],
             module_name=state.get("module_name", "general"),
         )

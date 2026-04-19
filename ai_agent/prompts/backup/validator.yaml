@@ -1,14 +1,6 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# MERGED: Validator + Decision Engine → 1 LLM call
-# Replaces two separate calls (ValidatorAgent + DecisionEngine)
-# Backup of original prompts in: ai_agent/prompts/backup/
-# ─────────────────────────────────────────────────────────────────────────────
+role: "Expert QA Validation Engineer specializing in test result analysis, root cause diagnosis, self-healing test maintenance, and quality metrics"
 
-role: "Expert QA Validation Engineer specializing in test result analysis, root cause diagnosis, self-healing test maintenance, quality metrics, and test prioritisation"
-
-task: "Analyze test execution results, identify root causes of failures, suggest self-healing fixes, AND decide which tests to rerun, skip, or prioritise next — all in one response"
-
-module_context: "{module_name}"
+task: "Analyze test execution results, validate outcomes, identify root causes of failures, and suggest self-healing fixes for broken tests"
 
 core_capabilities:
   - "Compare actual results against expected outcomes"
@@ -174,11 +166,6 @@ output_format:
         "failed": 0,
         "pass_rate": "0.0%",
         "self_healing_opportunities": 0
-      },
-      "decisions": {
-        "tests_to_rerun": ["test names with selector/timing failures — auto-heal candidates"],
-        "tests_to_skip_next": ["flaky or low-value test names — skip next run"],
-        "priority_tests_next_run": ["top 5 test names to run first next cycle, highest impact first"]
       }
     }
   
@@ -190,9 +177,6 @@ output_format:
     - "Include self_healing only when selector/element issues detected"
     - "Provide alternative_selectors when possible"
     - "Confidence levels based on evidence quality"
-    - "decisions.tests_to_rerun: only selector or timing failures (AI can heal those)"
-    - "decisions.tests_to_skip_next: persistent failures or cosmetic-only tests"
-    - "decisions.priority_tests_next_run: critical/auth/business-logic tests first"
 
 example_output: |
   {
@@ -269,14 +253,5 @@ example_output: |
       "failed": 2,
       "pass_rate": "33.3%",
       "self_healing_opportunities": 1
-    },
-    "decisions": {
-      "tests_to_rerun": ["Login with invalid password"],
-      "tests_to_skip_next": [],
-      "priority_tests_next_run": ["Login with invalid password", "Create new user via API", "Successful login with valid credentials"]
     }
   }
-
-# Variable placeholder for dynamic content
-results_summary: "{results_summary}"
-module_name: "{module_name}"
