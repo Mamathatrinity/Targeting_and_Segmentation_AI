@@ -24,13 +24,14 @@ DOMAIN_KNOWLEDGE: |
 GOAL: |
   Generate COMPREHENSIVE test case scenarios from UI data that are specific, actionable, and Excel-ready.
   Each scenario must include: WHAT to test, WITH WHAT data, and EXPECT WHAT result.
-  
-  **CRITICAL REQUIREMENT**: Generate a MINIMUM of 30 test scenarios total (DO NOT STOP AT 10-15).
-  - At least 12 positive scenarios covering all valid workflows and data variations
-  - At least 12 edge case scenarios covering boundary values, unusual inputs, and browser behaviors
-  - At least 12 negative scenarios covering invalid inputs, security tests, and error handling
-  
-  IMPORTANT: Keep generating scenarios until you reach 30+ total. Think exhaustively about ALL possible user interactions, data variations, security vulnerabilities, and edge conditions.
+
+  **SCENARIO COUNT — driven by depth decided in STRATEGY above:**
+  - depth: light  → minimum 10 total  (4 positive, 3 edge, 3 negative)
+  - depth: medium → minimum 20 total  (8 positive, 6 edge, 6 negative)
+  - depth: deep   → minimum 30 total  (12 positive, 10 edge, 8 negative)
+
+  IMPORTANT: Use the depth value from STRATEGY. Do NOT default to deep for every module.
+  Think exhaustively about ALL possible user interactions, data variations, security vulnerabilities, and edge conditions.
 
 CONTEXT: |
   - Input: UI elements (inputs, buttons, dropdowns, links) + business description
@@ -99,7 +100,7 @@ THINK_STEPWISE: |
      - What are common user journeys based on the UI flow?
      - What business goals can be achieved with these UI elements?
      - What CRUD operations are supported?
-  4. Write positive scenarios (aim for 10-15):
+  4. Write positive scenarios (count based on depth: light=4, medium=8, deep=12):
      - Happy paths with valid data (different valid formats)
      - Most common user workflows
      - Multi-step flows representing real usage
@@ -107,7 +108,7 @@ THINK_STEPWISE: |
      - Different data combinations
      - Session and state management
      - Browser features (autofill, remember me, etc.)
-  5. Write edge cases (aim for 10-15):
+  5. Write edge cases (count based on depth: light=3, medium=6, deep=10):
      - Boundary values (max/min length inputs, empty optional fields)
      - Unusual but valid inputs (special characters, very long text, unicode)
      - Rapid actions (double-click, multiple submissions, quick navigation)
@@ -116,7 +117,7 @@ THINK_STEPWISE: |
      - Copy-paste, keyboard shortcuts, tab navigation
      - Field trimming, case sensitivity, data formatting
      - Optional vs required field combinations
-  6. Write negative scenarios (aim for 10-15):
+  6. Write negative scenarios (count based on depth: light=3, medium=6, deep=8):
      - Invalid data formats based on field validation rules
      - Security tests (SQL injection, XSS attempts, unauthorized access)
      - Missing required fields, duplicate entries, constraint violations
@@ -125,7 +126,10 @@ THINK_STEPWISE: |
      - Malformed inputs, incorrect data types
      - Session expiration, unauthorized access
      - Cross-site request forgery attempts
-  7. Generate COMPREHENSIVE coverage - minimum 30 scenarios total (10+ positive, 10+ edge, 10+ negative)
+  7. Generate coverage matching the depth from STRATEGY:
+     - light  → ~10 total (4+3+3)
+     - medium → ~20 total (8+6+6)
+     - deep   → ~30 total (12+10+8)
   8. Verify each scenario has:
      - ACTION: What user does
      - DATA: Specific values used
@@ -134,17 +138,17 @@ THINK_STEPWISE: |
 OUTPUT_JSON: |
   {
     "positive_scenarios": [
-      "Generate 10-15 comprehensive positive test scenarios covering all valid workflows, data variations, and user interactions"
+      "List based on depth — light: 4, medium: 8, deep: 12 scenarios"
     ],
     "edge_cases": [
-      "Generate 10-15 edge case scenarios covering boundary values, unusual inputs, rapid actions, browser behavior, and concurrent operations"
+      "List based on depth — light: 3, medium: 6, deep: 10 scenarios"
     ],
     "negative_scenarios": [
-      "Generate 10-15 negative scenarios covering invalid inputs, security tests, validation errors, business rule violations, and error handling"
+      "List based on depth — light: 3, medium: 6, deep: 8 scenarios"
     ]
   }
-  
-  IMPORTANT: Aim for 30-50 total scenarios to ensure comprehensive test coverage. Think deeply about all possible user interactions, data variations, security concerns, and edge conditions.
+
+  Use the depth from the STRATEGY section to decide count. Do not always generate 30+.
 
 FEW_SHOT_EXAMPLES:
   - example: "Login/Authentication Page"
