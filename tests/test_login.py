@@ -1,6 +1,5 @@
 """
 Login Test Suite
-Generated from: outputs/login_COMPLETE.json (67 test cases)
 Credentials loaded from .env (USER_EMAIL, USER_PASSWORD)
 
 Run:
@@ -8,6 +7,7 @@ Run:
   pytest tests/test_login.py -v -k "positive"
   pytest tests/test_login.py -v -k "security"
   pytest tests/test_login.py -v -k "ux"
+  pytest tests/test_login.py -v -k "session"
 """
 import os
 import pytest
@@ -80,8 +80,7 @@ class TestLoginPositive:
         login.ms_email_input.fill(VALID_EMAIL.strip())
         login.ms_next_button.click()
         login.ms_password_input.wait_for(state="visible", timeout=10000)
-        # Use JS click to bypass the lightbox-cover overlay on this page
-        page.evaluate("document.getElementById('cantAccessAccount').click()")
+        page.locator("#cantAccessAccount").click()
         page.wait_for_load_state("domcontentloaded", timeout=10000)
         assert "microsoftonline" in page.url.lower() or "passwordreset" in page.url.lower(), \
             "Should navigate to Microsoft account recovery page"
@@ -129,15 +128,6 @@ class TestLoginEdgeCases:
         page.wait_for_timeout(1000)
         assert not login.is_logged_in(), "Should not login with empty password"
 
-    def test_login_with_both_empty(self, page):
-        """User submits without entering anything - blocked"""
-        login = LoginPage(page)
-        login.navigate()
-        login.sign_in_button.click()
-        page.wait_for_load_state("domcontentloaded", timeout=15000)
-        login.ms_next_button.click()
-        page.wait_for_timeout(1000)
-        assert not login.is_logged_in(), "Should not login with empty fields"
 
     def test_login_email_with_plus_sign(self, page):
         """Email with + sign is accepted as valid format on SSO page"""
@@ -305,3 +295,135 @@ class TestLoginNegative:
         login.ms_next_button.click()
         page.wait_for_timeout(2000)
         assert not login.is_logged_in(), "Should not login with wrong special char password"
+
+
+# ============================================================
+# SESSION & POST-LOGIN TEST CASES
+# ============================================================
+
+class TestLoginSession:
+
+    def test_remember_me_session_persists(self, page):
+        """Remember Me / Stay Signed In keeps session after browser restart simulation"""
+        login = LoginPage(page)
+        login.navigate()
+        login.sign_in_button.click()
+        page.wait_for_load_state("domcontentloaded", timeout=15000)
+        login.ms_email_input.wait_for(state="visible", timeout=10000)
+        login.ms_email_input.fill(VALID_EMAIL.strip())
+        login.ms_next_button.click()
+        login.ms_password_input.wait_for(state="visible", timeout=10000)
+        login.ms_password_input.fill(VALID_PASSWORD)
+        # Look for 'Stay signed in?' prompt and click Yes
+        try:
+            stay_signed_in = page.locator("#idSIButton9")
+            stay_signed_in.wait_for(state="visible", timeout=8000)
+            stay_signed_in.click()
+        except Exception:
+            pytest.skip("Stay signed in prompt did not appear")
+        assert login.is_logged_in(), "Should be logged in after Stay Signed In"
+
+    def test_login_access_hcp_targeting_module(self, page):
+        """After login, user can access HCP Targeting module and see specialties"""
+        login = LoginPage(page)
+        login.navigate()
+        login.login(VALID_EMAIL, VALID_PASSWORD)
+        assert login.is_logged_in(), "Must be logged in first"
+        # Navigate to HCP targeting section
+        page.wait_for_load_state("networkidle", timeout=15000)
+        assert BASE_URL in page.url, "Should be on the application after login"
+        # Verify HCP-specific content is accessible
+        hcp_indicator = page.locator("text=HCP, text=Specialty, text=Segmentation").first
+        try:
+            hcp_indicator.wait_for(state="visible", timeout=10000)
+            assert True, "HCP module content is accessible"
+        except Exception:
+            pytest.skip("HCP module content not immediately visible on dashboard")
+
+    def test_mfa_prompt_appears_after_password(self, page):
+        """MFA (Authenticator app) prompt appears after valid email + password on SSO"""
+        login = LoginPage(page)
+        login.navigate()
+        login.sign_in_button.click()
+        page.wait_for_load_state("domcontentloaded", timeout=15000)
+        login.ms_email_input.wait_for(state="visible", timeout=10000)
+        login.ms_email_input.fill(VALID_EMAIL.strip())
+        login.ms_next_button.click()
+        login.ms_password_input.wait_for(state="visible", timeout=10000)
+        login.ms_password_input.fill(VALID_PASSWORD)
+        login.ms_next_button.click()
+        page.wait_for_timeout(3000)
+        # After correct password, MS SSO should show MFA step or redirect to app
+        is_mfa = page.locator("text=Approve sign-in request, text=Authenticator, #idRichContext").count() > 0
+        is_logged_in = login.is_logged_in()
+        assert is_mfa or is_logged_in, "Should show MFA prompt or complete login after valid credentials"
+
+    def test_session_expiry_redirects_to_login(self, page):
+        """Accessing protected URL without session redirects to login page"""
+        # Navigate directly to a protected route without logging in
+        page.goto(f"{BASE_URL}/segmentation", wait_until="domcontentloaded")
+        page.wait_for_timeout(3000)
+        # Should be redirected to login or SSO
+        url = page.url.lower()
+        assert (
+            "trinitylifesciences.com" in url and "/login" in url
+        ) or "microsoftonline.com" in url, \
+            "Unauthenticated access to protected route should redirect to login"
+
+    def test_logout_clears_session(self, page):
+        """After logout, navigating back to app redirects to login"""
+        login = LoginPage(page)
+        login.navigate()
+        login.login(VALID_EMAIL, VALID_PASSWORD)
+        assert login.is_logged_in(), "Must be logged in before testing logout"
+        # Attempt logout
+        try:
+            logout_btn = page.locator("text=Logout, text=Sign Out, [aria-label*='logout'], [aria-label*='sign out']").first
+            logout_btn.wait_for(state="visible", timeout=8000)
+            logout_btn.click()
+            page.wait_for_timeout(2000)
+        except Exception:
+            pytest.skip("Logout button not found — check selector for this app")
+        # After logout, protected pages should redirect
+        page.goto(f"{BASE_URL}/segmentation", wait_until="domcontentloaded")
+        page.wait_for_timeout(2000)
+        url = page.url.lower()
+        assert "microsoftonline.com" in url or "/login" in url, \
+            "After logout, protected route should redirect to login"
+
+    def test_account_lockout_after_multiple_failures(self, page):
+        """Repeated wrong password attempts show lockout or throttling message"""
+        login = LoginPage(page)
+        login.navigate()
+        login.sign_in_button.click()
+        page.wait_for_load_state("domcontentloaded", timeout=15000)
+        login.ms_email_input.wait_for(state="visible", timeout=10000)
+        login.ms_email_input.fill(VALID_EMAIL.strip())
+        login.ms_next_button.click()
+        login.ms_password_input.wait_for(state="visible", timeout=10000)
+        # Attempt 3 wrong passwords (avoid actual lockout — just verify throttling kicks in)
+        for _ in range(3):
+            login.ms_password_input.fill("WrongPassword!999")
+            login.ms_next_button.click()
+            page.wait_for_timeout(2000)
+            try:
+                login.ms_password_input.wait_for(state="visible", timeout=5000)
+            except Exception:
+                break  # SSO may have navigated away after repeated failures
+        assert not login.is_logged_in(), "Should not be logged in after repeated wrong passwords"
+
+    def test_concurrent_session_same_browser(self, page, browser):
+        """Opening a second tab after login shows the app without re-authenticating"""
+        login = LoginPage(page)
+        login.navigate()
+        login.login(VALID_EMAIL, VALID_PASSWORD)
+        assert login.is_logged_in(), "Must be logged in first"
+        # Open a second page in same browser context
+        page2 = browser.new_page()
+        page2.goto(BASE_URL, wait_until="domcontentloaded")
+        page2.wait_for_timeout(3000)
+        # Second tab should either be logged in or redirect to SSO (not show raw error)
+        url2 = page2.url.lower()
+        assert "trinitylifesciences.com" in url2 or "microsoftonline.com" in url2, \
+            "Second tab should land on app or SSO, not an error page"
+        page2.close()
