@@ -243,12 +243,13 @@ class RAGStore:
     # ------------------------------------------------------------------
     def is_complex_module(self, module_name: str) -> bool:
         """
-        Only use RAG for modules that benefit from domain context.
-        Rule from PDF: skip RAG for simple / login modules.
+        Use RAG for modules that benefit from domain context.
+        Includes auth/login — CE-TS has a specific Azure AD SSO + MFA flow.
         """
         complex_modules = {
             "segmentation", "target_lists", "universe_summary",
-            "segment", "targets", "universe", "filters", "rules"
+            "segment", "targets", "universe", "filters", "rules",
+            "authentication", "login", "auth", "sso"
         }
         return any(m in module_name.lower() for m in complex_modules)
 

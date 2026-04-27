@@ -108,6 +108,9 @@ class PlannerAgent:
         if self.rag.is_complex_module(module_name):
             print(f"[Planner] 🔍 RAG retrieval for '{module_name}' (k=2)...")
             rag_context = self.rag.get_context(module_name, k=2)
+
+        # ── Module patterns: inject domain-specific workflows + selectors ──
+        module_pattern_context = self._get_module_pattern(module_name)
         
         # ── Strategy context to inject into prompt ───────────────────────
         module_strategy = (
@@ -136,7 +139,7 @@ class PlannerAgent:
             domain_context=AIConfig.DOMAIN_CONTEXT,
             compliance_requirements=AIConfig.COMPLIANCE_REQUIREMENTS,
             focus_area=focus_instruction,
-            rag_context=rag_context or "No additional domain knowledge retrieved.",
+            rag_context=(rag_context or "") + ("\n" + module_pattern_context if module_pattern_context else "") or "No additional domain knowledge retrieved.",
             module_strategy=module_strategy,
             strategy_rules=STRATEGY_RULES,
             scenario_counts=self._build_scenario_counts(),
@@ -193,6 +196,40 @@ class PlannerAgent:
                 return json.loads(json_match.group())
             raise ValueError(f"Failed to parse LLM response: {e}")
     
+    def _get_module_pattern(self, module_name: str) -> str:
+        """Load matching module pattern from module_patterns.yaml and return as plain text."""
+        import yaml
+        patterns_file = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)), "config", "module_patterns.yaml"
+        )
+        if not os.path.exists(patterns_file):
+            return ""
+        try:
+            with open(patterns_file, "r") as f:
+                data = yaml.safe_load(f)
+            patterns = data.get("module_patterns", {})
+            # Match module name to a pattern key
+            name_lower = module_name.lower()
+            matched = None
+            for key in patterns:
+                if key in name_lower or name_lower in key:
+                    matched = patterns[key]
+                    break
+            if not matched:
+                return ""
+            # Flatten to plain text for prompt injection
+            lines = [f"Module pattern: {module_name}"]
+            for section, items in matched.items():
+                if section == "type":
+                    continue
+                if isinstance(items, list):
+                    lines.append(f"{section.replace('_', ' ').title()}:")
+                    for item in items:
+                        lines.append(f"  - {item}")
+            return "\n".join(lines)
+        except Exception:
+            return ""
+
     def _build_scenario_counts(self) -> str:
         """Build scenario counts table string from DEPTH_CONFIG (no hardcoding in YAML)"""
         lines = []
