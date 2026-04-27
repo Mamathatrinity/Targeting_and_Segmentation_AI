@@ -3,7 +3,6 @@ Designer Agent
 Converts test scenarios into executable YAML test steps
 """
 from langchain_openai import AzureChatOpenAI
-from langchain_core.prompts import PromptTemplate
 from pydantic import BaseModel, Field
 from typing import List, Dict
 import yaml

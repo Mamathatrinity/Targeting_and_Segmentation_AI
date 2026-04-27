@@ -6,7 +6,6 @@ modules, and scenario generation — all in a single LLM call.
 Backup of the separate files: merged_planner_strategy.py / strategy.py
 """
 from langchain_openai import AzureChatOpenAI
-from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field
 from typing import List, Literal, Optional
