@@ -104,95 +104,99 @@ class DesignerAgent:
     
     def design_tests(self, scenarios: dict, ui_data: dict, max_tests: int = None) -> List[dict]:
         """
-        Convert scenarios to test steps
-        
-        Args:
-            scenarios: Test scenarios from PlannerAgent
-            ui_data: UI elements for reference
-            max_tests: Maximum number of tests (default from config)
-            
-        Returns:
-            List of test cases with steps
+        Convert scenarios to test steps — batched by DESIGNER_BATCH_SIZE to
+        avoid token overflow when scenario count is high (deep modules = 30+).
         """
         if max_tests is None:
             max_tests = AIConfig.MAX_TESTS
-        
-        # Prepare compact data
-        scenarios_text = self._format_scenarios(scenarios)
-        ui_elements_text = self._format_ui_elements(ui_data)
-        
-        # Get Langfuse tracker
-        tracker = get_tracker()
-        
-        # Depth from planner strategy (drives layer selection in prompt)
-        depth = scenarios.get("depth", "medium")
 
-        # Format YAML prompt with variables
-        formatted_prompt = format_prompt(
-            self.prompt_data,
-            scenarios=scenarios_text,
-            ui_elements=ui_elements_text,
-            depth=depth,
-            few_shot_examples=AIConfig.DESIGNER_FEW_SHOT_EXAMPLES,
-            format_instructions=""
+        depth = scenarios.get("depth", "medium")
+        ui_elements_text = self._format_ui_elements(ui_data)
+        tracker = get_tracker()
+
+        # Split all scenarios into batches of DESIGNER_BATCH_SIZE
+        all_scenarios = (
+            [*scenarios.get("positive_scenarios", []),
+             *scenarios.get("edge_cases", []),
+             *scenarios.get("negative_scenarios", [])]
         )
-        
-        # Check cache first (50-70% cost savings)
-        cached_response = get_cached_response(formatted_prompt)
-        if cached_response:
-            response_content = cached_response
-        else:
-            # Call LLM with Langfuse tracking
-            response = self.llm.invoke(formatted_prompt)
-            response_content = response.content
-            
-            # Cache the response
-            set_cached_response(formatted_prompt, response_content)
-        
-        # Track with Langfuse
-        tracker.generation(
-            name="designer_agent",
-            model=AIConfig.AZURE_OPENAI_DEPLOYMENT,
-            prompt=formatted_prompt,
-            completion=response_content,
-            metadata={"max_tests": max_tests, "stage": "test_design", "cached": cached_response is not None}
-        )
-        
-        # Parse JSON response
-        try:
-            # Remove markdown code blocks if present
-            content = response_content.strip()
-            
-            # Extract JSON from markdown code blocks
-            if "```json" in content:
-                # Find content between ```json and ```
-                start = content.find("```json") + 7
-                end = content.find("```", start)
-                content = content[start:end].strip()
-            elif content.startswith("```"):
-                # Handle generic ``` blocks
-                parts = content.split("```")
-                if len(parts) >= 2:
-                    content = parts[1].strip()
-                    if content.startswith("json"):
-                        content = content[4:].strip()
-            
-            data = json.loads(content)
-            test_cases = data.get("test_cases", [])
-            
-            # Track agent execution
-            tracker.trace_agent(
-                agent_name="designer",
-                input_data={"scenarios": scenarios_text[:200]},
-                output_data={"test_count": len(test_cases)},
-                metadata={"tests_generated": len(test_cases)}
+        batch_size = AIConfig.DESIGNER_BATCH_SIZE
+        batches = [all_scenarios[i:i + batch_size] for i in range(0, len(all_scenarios), batch_size)]
+
+        print(f"[Designer] 📦 {len(all_scenarios)} scenarios → {len(batches)} batch(es) of {batch_size}")
+
+        all_test_cases: List[dict] = []
+
+        for batch_num, batch in enumerate(batches, 1):
+            print(f"[Designer] ⚙️  Batch {batch_num}/{len(batches)} ({len(batch)} scenarios)...")
+
+            batch_scenarios_text = "\n".join(f"  - {s}" for s in batch)
+
+            formatted_prompt = format_prompt(
+                self.prompt_data,
+                scenarios=batch_scenarios_text,
+                ui_elements=ui_elements_text,
+                depth=depth,
+                few_shot_examples=AIConfig.DESIGNER_FEW_SHOT_EXAMPLES,
+                format_instructions=""
             )
-            
-            return test_cases
+
+            cached_response = get_cached_response(formatted_prompt)
+            if cached_response:
+                response_content = cached_response
+            else:
+                response = self.llm.invoke(formatted_prompt)
+                response_content = response.content
+                set_cached_response(formatted_prompt, response_content)
+
+            tracker.generation(
+                name="designer_agent",
+                model=AIConfig.AZURE_OPENAI_DEPLOYMENT,
+                prompt=formatted_prompt,
+                completion=response_content,
+                metadata={"batch": batch_num, "total_batches": len(batches),
+                           "depth": depth, "stage": "test_design",
+                           "cached": cached_response is not None}
+            )
+
+            batch_cases = self._parse_response(response_content)
+            all_test_cases.extend(batch_cases)
+
+            # Stop if we hit MAX_TESTS
+            if len(all_test_cases) >= max_tests:
+                all_test_cases = all_test_cases[:max_tests]
+                print(f"[Designer] ⚠️  Reached MAX_TESTS ({max_tests}), stopping.")
+                break
+
+        tracker.trace_agent(
+            agent_name="designer",
+            input_data={"scenario_count": len(all_scenarios), "batches": len(batches)},
+            output_data={"test_count": len(all_test_cases)},
+            metadata={"tests_generated": len(all_test_cases)}
+        )
+
+        print(f"[Designer] ✅ {len(all_test_cases)} test cases generated")
+        return all_test_cases
+
+    def _parse_response(self, response_content: str) -> List[dict]:
+        """Parse LLM JSON response, stripping markdown if present."""
+        content = response_content.strip()
+        if "```json" in content:
+            start = content.find("```json") + 7
+            end = content.find("```", start)
+            content = content[start:end].strip()
+        elif content.startswith("```"):
+            parts = content.split("```")
+            if len(parts) >= 2:
+                content = parts[1].strip()
+                if content.startswith("json"):
+                    content = content[4:].strip()
+        try:
+            data = json.loads(content)
+            return data.get("test_cases", [])
         except json.JSONDecodeError as e:
-            print(f"Failed to parse JSON: {e}")
-            print(f"Response: {response_content}")
-            raise
+            print(f"[Designer] ⚠️  Failed to parse batch response: {e}")
+            return []
     
     def _format_scenarios(self, scenarios: dict) -> str:
         """Format scenarios for prompt — count driven by depth (same DEPTH_CONFIG as planner)"""

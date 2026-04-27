@@ -185,13 +185,20 @@ class ValidatorAgent:
             }
             for r in results if r["status"] == "failed"
         ]
-        
+
+        # Cap at MAX_FAILURES_TO_ANALYZE — send all meaningful failures, not just 5
+        cap = AIConfig.MAX_FAILURES_TO_ANALYZE
+        if len(failed_tests) > cap:
+            print(f"[Validator] ⚠️  {len(failed_tests)} failures — analyzing top {cap} by priority")
+            failed_tests.sort(key=lambda t: _local_priority(t["name"]))
+            failed_tests = failed_tests[:cap]
+
         return {
             "total_tests": summary.get("total_tests", 0),
             "passed": summary.get("passed", 0),
             "failed": summary.get("failed", 0),
             "pass_rate": summary.get("pass_rate", "0%"),
-            "failed_tests": failed_tests[:5]  # Limit to 5 for tokens
+            "failed_tests": failed_tests
         }
 
 

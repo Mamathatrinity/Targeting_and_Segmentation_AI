@@ -17,24 +17,26 @@ class AIConfig:
     AZURE_OPENAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o")
     AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
     
-    # Token Limits (TESTING MODE - No limits, measure actual usage)
-    MAX_TOKENS_PLANNER = 8000    # Increased to allow more scenarios
-    MAX_TOKENS_DESIGNER = 8000   # Increased for detailed test steps
-    MAX_TOKENS_VALIDATOR = 4000  # Unlimited for testing (includes root cause + self-healing)
-    
-    # Temperature Settings
+    # Token Limits
+    MAX_TOKENS_PLANNER   = 8000
+    MAX_TOKENS_DESIGNER  = 16000  # bumped: 30 scenarios x ~10 steps x ~30 tokens = ~9000
+    MAX_TOKENS_VALIDATOR = 8000   # bumped: 30 failures x detailed root cause
+
+    # Temperature
     TEMPERATURE = 0  # Deterministic output
-    
-    # Prompt Caching (reduces costs for repeated prompts)
-    ENABLE_PROMPT_CACHING = True  # Cache system prompts
-    CACHE_TTL_SECONDS = 300  # Cache validity: 5 minutes
-    
-    # Workflow Safeguards (TESTING MODE - Generous limits)
-    MAX_TESTS = 100  # Allow up to 100 tests to see full potential
-    MAX_ITERATIONS = 1  # Maximum feedback loop iterations (SAFE: only 1 retry allowed)
-    TIMEOUT_MINUTES = 60  # 1 hour maximum for comprehensive testing
-    ENABLE_LIFECYCLE_LOOP = False  # Enable safe lifecycle loop (max 1 retry)
-    ENABLE_LEARNING_LAYER = True  # Enable failure history tracking
+
+    # Caching
+    ENABLE_PROMPT_CACHING = True
+    CACHE_TTL_SECONDS     = 300   # 5 minutes
+
+    # Workflow Safeguards
+    MAX_TESTS               = 100  # hard cap on test cases sent to execution
+    MAX_ITERATIONS          = 1    # max retry iterations
+    MAX_FAILURES_TO_ANALYZE = 20   # max failed tests sent to validator LLM (top by priority)
+    DESIGNER_BATCH_SIZE     = 10   # scenarios per designer LLM call (prevents token overflow)
+    TIMEOUT_MINUTES         = 60
+    ENABLE_LIFECYCLE_LOOP   = False
+    ENABLE_LEARNING_LAYER   = True
     
     # Langfuse Settings (Optional - for observability)
     LANGFUSE_PUBLIC_KEY = os.getenv("LANGFUSE_PUBLIC_KEY", "")
