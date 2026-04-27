@@ -33,7 +33,7 @@ class AIConfig:
     MAX_TESTS               = 100  # hard cap on test cases sent to execution
     MAX_ITERATIONS          = 1    # max retry iterations
     MAX_FAILURES_TO_ANALYZE = 20   # max failed tests sent to validator LLM (top by priority)
-    DESIGNER_BATCH_SIZE     = 10   # scenarios per designer LLM call (prevents token overflow)
+    DESIGNER_BATCH_SIZE     = 15   # scenarios per designer LLM call (deep=2 calls, medium=2, light=1)
     TIMEOUT_MINUTES         = 60
     ENABLE_LIFECYCLE_LOOP   = False
     ENABLE_LEARNING_LAYER   = True
