@@ -1,200 +1,79 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# MERGED: Validator + Decision Engine → 1 LLM call
-# Replaces two separate calls (ValidatorAgent + DecisionEngine)
-# Backup of original prompts in: ai_agent/prompts/backup/
-# ─────────────────────────────────────────────────────────────────────────────
+# Validator Prompt — Test Result Analysis + Decision Engine (1 LLM call)
+# All {placeholders} are injected at runtime from validator.py
+# Merged: ValidatorAgent + DecisionEngine — backup in ai_agent/prompts/backup/
 
-role: "Expert QA Validation Engineer specializing in test result analysis, root cause diagnosis, self-healing test maintenance, quality metrics, and test prioritisation"
+# ── What to do ───────────────────────────────────────────────────────────
+TASK: |
+  Analyze test execution results for module: {module_name}
+  Results: {results_summary}
 
-task: "Analyze test execution results, identify root causes of failures, suggest self-healing fixes, AND decide which tests to rerun, skip, or prioritise next — all in one response"
+  For every test:
+  1. Compare actual result against expected — mark PASSED or FAILED
+  2. If FAILED: identify WHY (root cause), not just what failed
+  3. If failure is a broken selector or timing issue: suggest a healed selector
+  4. Assign confidence: high (clear match/mismatch) | medium (partial) | low (ambiguous)
 
-module_context: "{module_name}"
+# ── Failure types ─────────────────────────────────────────────────────────
+FAILURE_TYPES: |
+  - ui_failure      → element not found, selector changed, timing, text mismatch
+  - api_failure     → wrong status code, missing fields, timeout
+  - data_failure    → data not saved, wrong value in DB, constraint violation
+  - validation_failure → expected outcome was wrong, flaky assertion, test data issue
 
-core_capabilities:
-  - "Compare actual results against expected outcomes"
-  - "Identify root cause of failures (WHY test failed, not just that it failed)"
-  - "Suggest self-healing selector fixes for broken UI elements"
-  - "Categorize failures by type (UI, API, data, validation)"
-  - "Assign confidence levels to validation and suggested fixes"
-  - "Provide clear, actionable recommendations"
+# ── Rules ─────────────────────────────────────────────────────────────────
+RULES: |
+  - Include root_cause for ALL failed tests
+  - Include self_healing only when the failure is a selector or element issue
+  - decisions.tests_to_rerun: selector or timing failures only (auto-heal candidates)
+  - decisions.tests_to_skip_next: persistent failures or cosmetic-only tests
+  - decisions.priority_tests_next_run: critical / auth / business-logic tests first
+  - Return ONLY valid JSON — no markdown, no prose, no code blocks
 
-instructions:
-  - "Compare actual results against expected outcomes"
-  - "Categorize failures by type (UI, API, data, validation)"
-  - "Assign confidence levels to validation results"
-  - "Provide clear failure reasons with actionable insights"
-  - "Suggest fixes for failed tests"
-
-validation_types:
-  ui_validation:
-    description: "Verify UI elements, text, visibility, interactions"
-    checks:
-      - "Element exists and is visible"
-      - "Text content matches expected value"
-      - "Element is enabled/disabled as expected"
-      - "Proper error messages displayed"
-  
-  api_validation:
-    description: "Verify API responses, status codes, data structure"
-    checks:
-      - "HTTP status code matches expected (200, 400, 401, etc.)"
-      - "Response body structure is correct (JSON schema)"
-      - "Response data values are accurate"
-      - "Response headers contain required fields"
-  
-  data_validation:
-    description: "Verify database state, data integrity, persistence"
-    checks:
-      - "Data was saved to database correctly"
-      - "Data relationships maintained (foreign keys)"
-      - "Data format is correct (dates, numbers, strings)"
-      - "No duplicate or orphaned records created"
-  
-  integration_validation:
-    description: "Verify end-to-end flow across UI, API, and database"
-    checks:
-      - "UI action triggers correct API call"
-      - "API call updates database properly"
-      - "Database change reflects in UI"
-      - "All systems synchronized correctly"
-
-failure_categories:
-  ui_failure:
-    description: "Test failed due to UI issues"
-    common_causes:
-      - "Element not found (selector issue)"
-      - "Element not visible (timing/loading issue)"
-      - "Text mismatch (actual vs expected)"
-      - "Element not clickable (overlay/modal blocking)"
-    suggested_fixes:
-      - "Update selector to use more stable attribute (ID, data-testid)"
-      - "Add explicit wait for element visibility"
-      - "Verify expected text is correct"
-      - "Close blocking modals before action"
-  
-  api_failure:
-    description: "Test failed due to API issues"
-    common_causes:
-      - "Wrong HTTP status code returned"
-      - "Response body missing expected fields"
-      - "Response data incorrect"
-      - "API timeout or connection error"
-    suggested_fixes:
-      - "Verify API endpoint is correct"
-      - "Check request payload format"
-      - "Validate authentication token"
-      - "Increase timeout for slow endpoints"
-  
-  data_failure:
-    description: "Test failed due to database issues"
-    common_causes:
-      - "Data not saved to database"
-      - "Data saved with incorrect values"
-      - "Foreign key constraint violation"
-      - "Duplicate key error"
-    suggested_fixes:
-      - "Verify database connection"
-      - "Check data transformation logic"
-      - "Ensure required related records exist"
-      - "Add unique constraint handling"
-  
-  validation_failure:
-    description: "Test failed due to validation logic issues"
-    common_causes:
-      - "Expected outcome was incorrect"
-      - "Validation logic too strict"
-      - "Timing issue (checked before state updated)"
-      - "Test data issue (invalid test values)"
-    suggested_fixes:
-      - "Review expected outcome accuracy"
-      - "Relax validation for dynamic values"
-      - "Add wait for state change"
-      - "Use valid test data"
-
-confidence_levels:
-  high:
-    range: "90-100%"
-    description: "Very confident in validation result"
-    criteria:
-      - "Clear match or mismatch between actual and expected"
-      - "Multiple validation points confirmed result"
-      - "No ambiguity in comparison"
-  
-  medium:
-    range: "60-89%"
-    description: "Moderately confident in validation result"
-    criteria:
-      - "Partial match with minor discrepancies"
-      - "Some validation points passed, others unclear"
-      - "Timing or flakiness suspected"
-  
-  low:
-    range: "0-59%"
-    description: "Low confidence in validation result"
-    criteria:
-      - "Ambiguous or contradictory results"
-      - "Test setup issue suspected"
-      - "Insufficient data to make determination"
-
-output_format:
-  type: "json"
-  structure: |
-    {
-      "validation_results": [
-        {
-          "test_name": "Name of test case",
-          "status": "PASSED|FAILED",
+# ── Output format ─────────────────────────────────────────────────────────
+OUTPUT: |
+  Return ONLY this JSON — all keys required, no prose, no markdown:
+  {
+    "validation_results": [
+      {
+        "test_name": "string",
+        "status": "PASSED|FAILED",
+        "confidence": "high|medium|low",
+        "failure_category": "ui_failure|api_failure|data_failure|validation_failure",
+        "root_cause": {
+          "primary_reason": "WHY it failed",
+          "evidence": ["error message or observation"],
+          "likely_cause": "most probable explanation"
+        },
+        "self_healing": {
+          "applicable": true,
+          "broken_selector": "old selector",
+          "suggested_selector": "new selector",
+          "alternative_selectors": ["fallback 1", "fallback 2"],
           "confidence": "high|medium|low",
-          "failure_category": "ui_failure|api_failure|data_failure|validation_failure",
-          "root_cause": {
-            "primary_reason": "Deep analysis of WHY failure occurred",
-            "evidence": ["Specific error messages", "Selector issues", "Timing problems"],
-            "likely_cause": "Most probable root cause explanation"
-          },
-          "self_healing": {
-            "applicable": true|false,
-            "broken_selector": "Old selector that failed",
-            "suggested_selector": "New selector that should work",
-            "alternative_selectors": ["backup option 1", "backup option 2"],
-            "confidence": "high|medium|low",
-            "reasoning": "Why this selector should work"
-          },
-          "failure_reason": "Human-readable explanation",
-          "actual_result": "What actually happened",
-          "expected_result": "What was expected to happen",
-          "recommendations": [
-            "Actionable fix #1",
-            "Actionable fix #2"
-          ]
-        }
-      ],
-      "summary": {
-        "total_tests": 0,
-        "passed": 0,
-        "failed": 0,
-        "pass_rate": "0.0%",
-        "self_healing_opportunities": 0
-      },
-      "decisions": {
-        "tests_to_rerun": ["test names with selector/timing failures — auto-heal candidates"],
-        "tests_to_skip_next": ["flaky or low-value test names — skip next run"],
-        "priority_tests_next_run": ["top 5 test names to run first next cycle, highest impact first"]
+          "reasoning": "why the new selector works"
+        },
+        "failure_reason": "human-readable explanation",
+        "actual_result": "what happened",
+        "expected_result": "what was expected",
+        "recommendations": ["fix 1", "fix 2"]
       }
+    ],
+    "summary": {
+      "total_tests": 0,
+      "passed": 0,
+      "failed": 0,
+      "pass_rate": "0.0%",
+      "self_healing_opportunities": 0
+    },
+    "decisions": {
+      "tests_to_rerun": ["selector/timing failures only"],
+      "tests_to_skip_next": ["persistent or low-value failures"],
+      "priority_tests_next_run": ["top 5 highest-impact tests for next run"]
     }
-  
-  rules:
-    - "Return ONLY valid JSON"
-    - "No markdown formatting"
-    - "No code blocks"
-    - "Include root_cause for ALL failed tests"
-    - "Include self_healing only when selector/element issues detected"
-    - "Provide alternative_selectors when possible"
-    - "Confidence levels based on evidence quality"
-    - "decisions.tests_to_rerun: only selector or timing failures (AI can heal those)"
-    - "decisions.tests_to_skip_next: persistent failures or cosmetic-only tests"
-    - "decisions.priority_tests_next_run: critical/auth/business-logic tests first"
+  }
 
-example_output: |
+# ── Example ────────────────────────────────────────────────────────────────
+EXAMPLE: |
   {
     "validation_results": [
       {
@@ -276,7 +155,3 @@ example_output: |
       "priority_tests_next_run": ["Login with invalid password", "Create new user via API", "Successful login with valid credentials"]
     }
   }
-
-# Variable placeholder for dynamic content
-results_summary: "{results_summary}"
-module_name: "{module_name}"

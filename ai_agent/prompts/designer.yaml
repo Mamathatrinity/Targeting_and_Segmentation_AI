@@ -1,287 +1,61 @@
-GOAL: |
-  Convert test case scenarios into executable test steps covering UI, API, and Database validation.
-  Generate detailed, layer-specific steps that can be automated and documented in Excel.
+# Designer Prompt — Scenario → Executable Test Steps (1 LLM call)
+# All {placeholders} are injected at runtime from designer.py
+# Depth is decided by PlannerAgent and passed through — do not override it here
 
-CONTEXT: |
-  - Input: Test scenarios from Planner + UI elements
-  - Output: Test cases with detailed steps in JSON format
-  - Layers: UI (Playwright), API (Requests), Database (PyMySQL)
-  - Format: Each step has action, target, value, expected result, and layer
-  - Purpose: Steps will be executed by automation framework and documented in Excel
-  - Excel Columns: Test Case Name | Description | Preconditions | Test Steps | Expected Result | Actual Result | Status | Layer
+# ── What to generate ─────────────────────────────────────────────────────
+TASK: |
+  Convert each test scenario into executable test steps.
+  Scenarios: {scenarios}
+  UI elements: {ui_elements}
+  Testing depth: {depth}
 
-ALLOWED_ACTIONS:
-  ui_actions:
-    - navigate: "Navigate to URL"
-    - fill: "Fill input field with value"
-    - click: "Click button/link/element"
-    - select: "Select dropdown option"
-    - verify_text: "Verify text appears on page"
-    - verify_element: "Verify element exists/visible"
-    - wait: "Wait for element or condition"
-  
-  api_actions:
-    - verify_api: "Call API endpoint and verify response"
-    - verify_status: "Check HTTP status code"
-    - verify_response: "Validate response body/headers"
-    - verify_api_field: "Check specific JSON field value"
-  
-  db_actions:
-    - verify_db: "Query database and verify data"
-    - verify_db_count: "Check record count in table"
-    - verify_db_value: "Verify specific column value"
-    - verify_db_exists: "Check if record exists"
+  Layer selection — use the depth above, do not add layers beyond what depth allows:
+  - depth: light  → UI steps only
+  - depth: medium → UI steps + API verification
+  - depth: deep   → UI steps + API verification + DB verification
 
-NOT_ALLOWED:
-  - Vague steps without clear target or expected result
-  - Steps without layer specification
-  - Generic selectors ("button" instead of "Login button")
-  - Missing verification steps
-  - DB modification queries (INSERT, UPDATE, DELETE) - SELECT only
-  - API calls without expected status/response
-  - Steps that cannot be automated
+# ── Rules ────────────────────────────────────────────────────────────────
+RULES: |
+  Every test case MUST have:
+  - A navigate step first (go to the URL)
+  - Fill / click steps for each user action with exact values from the scenario
+  - At least one verify step at the end with a specific expected result
 
-STEP_RULES:
-  ui_layer:
-    - "Use specific selectors from UI elements provided"
-    - "Include expected results: 'Dashboard page appears', 'Error message displays'"
-    - "Navigate first: Always start with navigate action to target URL"
-    - "Verify after actions: After click/fill, verify the result"
-  
-  api_layer:
-    - "Specify full endpoint path based on action performed"
-    - "State expected status: 200, 400, 401, 404, 500"
-    - "Verify response data: Check specific JSON fields returned"
-    - "Include auth if needed: Mention token/session requirements"
-  
-  db_layer:
-    - "Specify table and column based on data being validated"
-    - "Use WHERE conditions: Identify specific records to check"
-    - "State expected value: 'IS NOT NULL', '= active', '> 0'"
-    - "Read-only: Only SELECT queries, no modifications"
-  
-  excel_formatting:
-    - "Number steps clearly: 1, 2, 3, 4..."
-    - "One action per step for clarity"
-    - "Professional language for manual testers"
-    - "Include layer in step description"
+  DO:
+  - Use exact values from the scenario (e.g. email, passwords, filter values)
+  - Use specific selectors — not just "button" but "Login button"
+  - Add API steps only if depth is medium or deep
+  - Add DB steps only if depth is deep
+  - DB queries must be SELECT only — no INSERT/UPDATE/DELETE
 
-THINK_STEPWISE: |
-  1. Parse scenario from Planner:
-     - Extract: What user does, with what data, expected result
-     - Identify: Which layers need validation (UI, API, DB)
-  2. Design UI steps (Layer: UI):
-     - Start with navigate to URL
-     - Add fill steps for each input (with specific values from scenario)
-     - Add click steps for buttons
-     - Add verify_text for expected outcomes
-  3. Design API steps (Layer: API):
-     - Identify API calls triggered by UI actions
-     - Add verify_api for status code (200, 400, etc.)
-     - Add verify_api_field for response data validation
-  4. Design DB steps (Layer: DB):
-     - Identify database changes based on the action performed
-     - Add verify_db to check data persistence
-     - Use WHERE to identify correct record
-  5. Order steps logically:
-     - UI actions first (user interaction)
-     - API verification second (system response)
-     - DB verification last (data persistence)
-  6. Add expected results to each step
-  7. Format for Excel readability
+  DO NOT:
+  - Add layers that exceed the depth (e.g. no DB steps for depth: light)
+  - Write vague expected results like "page loads"
+  - Invent UI elements not present in {ui_elements}
+  - Write multiple SQL statements in one DB step
 
-LAYER_STRATEGY: |
-  When to add API validation:
-  - After authentication actions → verify session/token endpoints
-  - After search/filter → verify search endpoints return matching data
-  - After form submission → verify submission endpoints return success
-  
-  When to add DB validation:
-  - After record creation → verify table has new record
-  - After updates → verify timestamps and modified fields updated
-  - After data modification → verify database reflects changes
-  
-  When UI-only is sufficient:
-  - Simple navigation (clicking links)
-  - Read-only pages (viewing data)
-  - Static content verification
-
-OUTPUT_JSON: |
+# ── Output format ─────────────────────────────────────────────────────────
+OUTPUT: |
+  Return ONLY this JSON — all keys required, no prose, no markdown:
   {
     "test_cases": [
       {
-        "name": "test_login_valid_e2e",
-        "description": "User logs in with valid credentials and system validates UI + API + DB",
+        "name": "test_<action>_<scenario_type>",
+        "description": "one sentence describing what this test validates",
         "steps": [
-          {"action": "navigate", "target": "url", "value": "https://app.com/login", "expected": "Login page loads", "layer": "UI"},
-          {"action": "fill", "target": "Email", "value": "john.doe@test.com", "expected": "Email field populated", "layer": "UI"},
-          {"action": "fill", "target": "Password", "value": "SecurePass123!", "expected": "Password field populated", "layer": "UI"},
-          {"action": "click", "target": "Login", "expected": "Form submitted", "layer": "UI"},
-          {"action": "verify_text", "expected": "Dashboard", "layer": "UI"},
-          {"action": "verify_api", "endpoint": "/api/auth/session", "expected_status": 200, "expected": "Session active with valid token", "layer": "API"},
-          {"action": "verify_db", "table": "users", "column": "last_login", "condition": "IS NOT NULL WHERE email='john.doe@test.com'", "expected": "Last login timestamp updated", "layer": "DB"}
+          {"action": "navigate",    "target": "url",    "value": "https://...",   "expected": "Page loads",        "layer": "UI"},
+          {"action": "fill",        "target": "Email",  "value": "user@co.com",   "expected": "Field populated",   "layer": "UI"},
+          {"action": "click",       "target": "Login",  "value": "",              "expected": "Form submitted",    "layer": "UI"},
+          {"action": "verify_text", "target": "",       "value": "",              "expected": "Dashboard visible", "layer": "UI"},
+          {"action": "verify_api",  "endpoint": "/api/auth/session", "expected_status": 200, "expected": "Session active", "layer": "API"},
+          {"action": "verify_db",   "table": "users", "column": "last_login", "condition": "IS NOT NULL WHERE email='user@co.com'", "expected": "Login recorded", "layer": "DB"}
         ]
       }
     ]
   }
 
-FEW_SHOT_EXAMPLES:
-  - scenario: "User logs in with email 'john.doe@example.com' and password 'SecurePass123!' and sees 'Welcome, John' message on Dashboard"
-    ui_elements:
-      inputs:
-        - label: "Email"
-        - label: "Password"
-      buttons:
-        - text: "Login"
-    output:
-      name: "test_login_valid_e2e"
-      description: "User logs in with valid credentials and system validates UI, API session, and database login timestamp"
-      steps:
-        - action: "navigate"
-          target: "url"
-          value: "https://app.example.com/login"
-          expected: "Login page loads successfully"
-          layer: "UI"
-        - action: "fill"
-          target: "Email"
-          value: "john.doe@example.com"
-          expected: "Email field populated with john.doe@example.com"
-          layer: "UI"
-        - action: "fill"
-          target: "Password"
-          value: "SecurePass123!"
-          expected: "Password field populated (masked)"
-          layer: "UI"
-        - action: "click"
-          target: "Login"
-          expected: "Login form submitted, redirect initiated"
-          layer: "UI"
-        - action: "verify_text"
-          expected: "Welcome, John"
-          layer: "UI"
-        - action: "verify_api"
-          endpoint: "/api/auth/session"
-          expected_status: 200
-          expected: "Session API returns 200 with valid user_id and token"
-          layer: "API"
-        - action: "verify_api_field"
-          endpoint: "/api/auth/session"
-          field: "user.email"
-          expected_value: "john.doe@example.com"
-          expected: "API response contains correct user email"
-          layer: "API"
-        - action: "verify_db"
-          table: "users"
-          column: "last_login"
-          condition: "IS NOT NULL WHERE email = 'john.doe@example.com'"
-          expected: "Database shows last_login timestamp updated within last 10 seconds"
-          layer: "DB"
-        - action: "verify_db"
-          table: "users"
-          column: "login_count"
-          condition: "> 0 WHERE email = 'john.doe@example.com'"
-          expected: "Login count incremented by 1"
-          layer: "DB"
+  {format_instructions}
 
-  - scenario: "User searches for item by entering 'Product A', clicks Apply Filters, sees results table showing 'Product A' entries"
-    ui_elements:
-      inputs:
-        - placeholder: "Search by name"
-      buttons:
-        - text: "Apply Filters"
-    output:
-      name: "test_search_valid"
-      description: "User searches for specific item and validates UI results, API response, and database query execution"
-      steps:
-        - action: "navigate"
-          target: "url"
-          value: "https://app.example.com/search"
-          expected: "Search page loads with filters visible"
-          layer: "UI"
-        - action: "fill"
-          target: "Search by name"
-          value: "Product A"
-          expected: "Search field populated with Product A"
-          layer: "UI"
-        - action: "click"
-          target: "Apply Filters"
-          expected: "Search executed, loading indicator appears"
-          layer: "UI"
-        - action: "verify_text"
-          expected: "Product A"
-          layer: "UI"
-        - action: "verify_element"
-          target: "ID column"
-          expected: "IDs visible in results table"
-          layer: "UI"
-        - action: "verify_api"
-          endpoint: "/api/search?name=Product A"
-          expected_status: 200
-          expected: "Search API returns 200 with matching records"
-          layer: "API"
-        - action: "verify_api_field"
-          endpoint: "/api/search?name=Product A"
-          field: "results[0].name"
-          expected_value: "Product A"
-          expected: "First result contains Product A in name field"
-          layer: "API"
-        - action: "verify_db_count"
-          table: "items"
-          condition: "WHERE name LIKE '%Product A%'"
-          expected: "Database returns count > 0 matching search criteria"
-          layer: "DB"
-
-  - scenario: "User attempts login with SQL injection 'admin' OR '1'='1' --, system shows 'Invalid email format' error"
-    ui_elements:
-      inputs:
-        - label: "Email"
-        - label: "Password"
-      buttons:
-        - text: "Login"
-    output:
-      name: "test_login_sql_injection_blocked"
-      description: "Security test: SQL injection attempt is sanitized, login blocked, and security event logged"
-      steps:
-        - action: "navigate"
-          target: "url"
-          value: "https://app.example.com/login"
-          expected: "Login page loads"
-          layer: "UI"
-        - action: "fill"
-          target: "Email"
-          value: "admin' OR '1'='1' --"
-          expected: "Malicious input entered in email field"
-          layer: "UI"
-        - action: "fill"
-          target: "Password"
-          value: "anypassword"
-          expected: "Password field populated"
-          layer: "UI"
-        - action: "click"
-          target: "Login"
-          expected: "Login attempt submitted"
-          layer: "UI"
-        - action: "verify_text"
-          expected: "Invalid email format"
-          layer: "UI"
-        - action: "verify_api"
-          endpoint: "/api/auth/login"
-          expected_status: 400
-          expected: "API rejects malicious input with 400 Bad Request"
-          layer: "API"
-        - action: "verify_api_field"
-          endpoint: "/api/auth/login"
-          field: "error"
-          expected_value: "Invalid email format"
-          expected: "API error message confirms input validation"
-          layer: "API"
-        - action: "verify_db"
-          table: "security_logs"
-          column: "event_type"
-          condition: "= 'sql_injection_attempt' ORDER BY created_at DESC LIMIT 1"
-          expected: "Security event logged with SQL injection attempt details"
-          layer: "DB"
-
-# Variable placeholders for dynamic content
-scenarios: "{scenarios}"
-ui_elements: "{ui_elements}"
+# ── Examples ──────────────────────────────────────────────────────────────
+EXAMPLES:
+{few_shot_examples}

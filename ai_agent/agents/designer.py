@@ -124,11 +124,17 @@ class DesignerAgent:
         # Get Langfuse tracker
         tracker = get_tracker()
         
+        # Depth from planner strategy (drives layer selection in prompt)
+        depth = scenarios.get("depth", "medium")
+
         # Format YAML prompt with variables
         formatted_prompt = format_prompt(
             self.prompt_data,
             scenarios=scenarios_text,
-            ui_elements=ui_elements_text
+            ui_elements=ui_elements_text,
+            depth=depth,
+            few_shot_examples=AIConfig.DESIGNER_FEW_SHOT_EXAMPLES,
+            format_instructions=""
         )
         
         # Check cache first (50-70% cost savings)
@@ -189,24 +195,27 @@ class DesignerAgent:
             raise
     
     def _format_scenarios(self, scenarios: dict) -> str:
-        """Format scenarios for prompt (token-efficient)"""
+        """Format scenarios for prompt — count driven by depth (same DEPTH_CONFIG as planner)"""
+        from ai_agent.agents.planner import DEPTH_CONFIG
+        depth = scenarios.get("depth", "medium")
+        counts = DEPTH_CONFIG.get(depth, DEPTH_CONFIG["medium"])
+
         lines = []
-        
         if "positive_scenarios" in scenarios:
             lines.append("Positive:")
-            for s in scenarios["positive_scenarios"][:3]:  # Limit for tokens
+            for s in scenarios["positive_scenarios"][:counts["positive"]]:
                 lines.append(f"  - {s}")
-        
+
         if "edge_cases" in scenarios:
             lines.append("Edge Cases:")
-            for s in scenarios["edge_cases"][:2]:
+            for s in scenarios["edge_cases"][:counts["edge"]]:
                 lines.append(f"  - {s}")
-        
+
         if "negative_scenarios" in scenarios:
             lines.append("Negative:")
-            for s in scenarios["negative_scenarios"][:2]:
+            for s in scenarios["negative_scenarios"][:counts["negative"]]:
                 lines.append(f"  - {s}")
-        
+
         return "\n".join(lines)
     
     def _format_ui_elements(self, ui_data: dict) -> str:

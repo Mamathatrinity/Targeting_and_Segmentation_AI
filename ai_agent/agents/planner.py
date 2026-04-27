@@ -23,6 +23,23 @@ from ai_agent.utils.prompt_formatter import format_prompt
 from ai_agent.rag.rag_store import get_rag_store
 
 
+# ── Depth-driven scenario counts (single source of truth — no hardcoding in YAML) ──
+DEPTH_CONFIG: dict = {
+    "light":  {"positive": 4,  "edge": 3,  "negative": 3},
+    "medium": {"positive": 8,  "edge": 6,  "negative": 6},
+    "deep":   {"positive": 12, "edge": 10, "negative": 8},
+}
+
+# ── Strategy rules injected as text — no hardcoding in YAML ──────────────
+STRATEGY_RULES: str = (
+    "  - Auth / Login modules                         → priority: critical, depth: deep\n"
+    "  - Business logic (segmentation, rules, filters) → priority: high,     depth: deep\n"
+    "  - Dashboard / Reports / UI-only pages           → priority: medium,   depth: light\n"
+    "  - If previous failures exist                    → increase depth by one level\n"
+    "  - Complex domain modules (use RAG context)      → depth: deep"
+)
+
+
 class TestScenarios(BaseModel):
     """Structured output for test scenarios — now includes strategy fields"""
     # ── Strategy fields (merged from StrategyAgent) ───────────────────────
@@ -115,13 +132,16 @@ class PlannerAgent:
         # Format YAML prompt with BOTH natural language + UI data (combined approach)
         formatted_prompt = format_prompt(
             self.prompt_data,
-            user_description=ui_data.get("user_description", "Test all features on this page"),  # Business context
-            ui_data=json.dumps(compact_ui, indent=2),  # Technical details
-            domain_context="HCP Targeting & Segmentation: Medical specialties, segments, filters, NPI numbers, HIPAA compliance",
-            compliance_requirements="HIPAA compliance, PII masking, data privacy, audit logging",
-            focus_area=focus_instruction,  # Add focus area instruction
-            rag_context=rag_context or "No additional domain knowledge.",
+            user_description=ui_data.get("user_description", "Test all features on this page"),
+            ui_data=json.dumps(compact_ui, indent=2),
+            domain_context=AIConfig.DOMAIN_CONTEXT,
+            compliance_requirements=AIConfig.COMPLIANCE_REQUIREMENTS,
+            focus_area=focus_instruction,
+            rag_context=rag_context or "No additional domain knowledge retrieved.",
             module_strategy=module_strategy,
+            strategy_rules=STRATEGY_RULES,
+            scenario_counts=self._build_scenario_counts(),
+            few_shot_examples=AIConfig.FEW_SHOT_EXAMPLES,
             format_instructions=self.parser.get_format_instructions()
         )
         
@@ -174,6 +194,17 @@ class PlannerAgent:
                 return json.loads(json_match.group())
             raise ValueError(f"Failed to parse LLM response: {e}")
     
+    def _build_scenario_counts(self) -> str:
+        """Build scenario counts table string from DEPTH_CONFIG (no hardcoding in YAML)"""
+        lines = []
+        for depth, counts in DEPTH_CONFIG.items():
+            total = sum(counts.values())
+            lines.append(
+                f"  - depth: {depth:<6} → total {total:>2}  "
+                f"({counts['positive']} positive, {counts['edge']} edge, {counts['negative']} negative)"
+            )
+        return "\n".join(lines)
+
     def _compact_ui_data(self, ui_data: dict) -> dict:
         """Reduce UI data size for token efficiency"""
         return {
