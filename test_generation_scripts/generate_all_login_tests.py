@@ -26,49 +26,134 @@ CLASS_LABELS = {
 }
 
 
+RESULTS_FILE = os.path.join(BASE_DIR, ".pytest_results.txt")  # written by conftest after each run
+
+# Hand-authored Expected Result per test — matches the assert logic in test_login.py
+EXPECTED_RESULTS = {
+    "test_valid_login_redirects_to_dashboard":      "User is redirected to dashboard; URL contains trinitylifesciences.com",
+    "test_valid_login_email_case_insensitive":       "SSO accepts uppercase email and advances to password step",
+    "test_valid_login_email_with_spaces_trimmed":    "Login succeeds; spaces trimmed from email automatically",
+    "test_login_page_loads_correctly":               "Sign In button is visible on the app login page",
+    "test_forgot_password_link_visible":             "'Can't access your account?' link is visible on SSO password page",
+    "test_forgot_password_link_navigates":           "Clicking recovery link navigates to microsoftonline password reset page",
+    "test_password_field_is_masked":                 "Password input type=password (field is masked)",
+    "test_login_with_empty_email":                   "User is NOT logged in; SSO shows validation error",
+    "test_login_with_empty_password":                "User is NOT logged in; SSO shows validation error",
+    "test_login_email_with_plus_sign":               "SSO stays on microsoftonline; email format with + is accepted",
+    "test_login_tab_navigation":                     "Focus moves to INPUT, BUTTON, or A element after Tab key",
+    "test_login_enter_key_submits":                  "Enter key advances to password step on SSO",
+    "test_login_page_title":                         "Page title is not empty",
+    "test_browser_back_after_login":                 "Browser back stays on trinitylifesciences.com or microsoftonline.com",
+    "test_invalid_password_shows_error":             "User is NOT logged in; SSO shows incorrect password error",
+    "test_invalid_email_shows_error":                "User is NOT logged in; SSO shows account not found error",
+    "test_invalid_email_format":                     "User is NOT logged in; SSO shows email format error",
+    "test_sql_injection_in_email":                   "User is NOT logged in; SQL injection blocked by SSO",
+    "test_sql_injection_in_password":                "User is NOT logged in; SQL injection in password blocked",
+    "test_xss_in_email_field":                       "User is NOT logged in; XSS script not executed",
+    "test_very_long_email_rejected":                 "User is NOT logged in; 500+ char email rejected by SSO",
+    "test_special_characters_in_password":           "User is NOT logged in; wrong special-char password rejected",
+    "test_remember_me_session_persists":             "User is logged in after clicking Yes on 'Stay signed in?' prompt",
+    "test_login_access_hcp_targeting_module":        "Dashboard loads with HCP/Specialty/Segmentation content visible",
+    "test_mfa_prompt_appears_after_password":        "MFA prompt OR 'Stay signed in?' OR successful redirect appears",
+    "test_session_expiry_redirects_to_login":        "Unauthenticated access redirects to SSO or shows Sign In button",
+    "test_logout_clears_session":                    "After logout, protected route redirects to SSO or /login",
+    "test_account_lockout_after_multiple_failures":  "User is NOT logged in after 3 wrong password attempts",
+    "test_concurrent_session_same_browser":          "Second tab lands on app or SSO, not an error page",
+}
+
+
+def _load_last_results() -> dict:
+    """Read {func_name: PASS|FAIL|SKIP} written by conftest after last pytest run."""
+    results = {}
+    if not os.path.exists(RESULTS_FILE):
+        return results
+    with open(RESULTS_FILE) as f:
+        for line in f:
+            parts = line.strip().split("|", 1)
+            if len(parts) == 2:
+                results[parts[0]] = parts[1]
+    return results
+
+
 def rebuild_excel_from_tests():
     """
     Rebuild Testcases/all_login_test_cases_COMPLETE.xlsx directly from
-    tests/test_login.py so the Excel always matches the actual test file.
+    tests/test_login.py — includes Expected Result + Actual Result from last run.
     Run: python test_generation_scripts/generate_all_login_tests.py --rebuild
     """
-    # Parse test functions from test_login.py via AST (no imports needed)
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, Alignment, PatternFill
+    from openpyxl.utils import get_column_letter
+
+    # Parse test functions via AST
     with open(TEST_FILE, "r", encoding="utf-8") as f:
         tree = ast.parse(f.read())
 
-    test_cases = []
+    tests = []
     for node in ast.walk(tree):
         if isinstance(node, ast.ClassDef):
             cls = node.name
             for item in node.body:
                 if isinstance(item, ast.FunctionDef) and item.name.startswith("test_"):
-                    doc = (ast.get_docstring(item) or "").strip()
-                    category = CLASS_LABELS.get(cls, cls)
-                    test_cases.append({
-                        "name": item.name,
-                        "description": doc,
-                        "steps": [
-                            {
-                                "action": "verify",
-                                "target": "application",
-                                "value": "",
-                                "expected": doc,
-                                "layer": "UI",
-                            }
-                        ],
-                        "category": category,
+                    tests.append({
+                        "fn":       item.name,
+                        "category": CLASS_LABELS.get(cls, cls),
+                        "doc":      (ast.get_docstring(item) or "").strip(),
                     })
 
-    print(f"Found {len(test_cases)} tests in {TEST_FILE}")
+    last_results = _load_last_results()
+    run_ts = last_results.get("__timestamp__", "Not run yet")
 
-    # Call export_to_excel directly — avoids loading LLM/YAML (not needed for Excel export)
-    from ai_agent.agents.designer import DesignerAgent
-    import importlib, types
-    # Bypass __init__ (which loads LLM + YAML) — we only need export_to_excel
-    d = object.__new__(DesignerAgent)
+    STATUS_COLOUR = {"PASS": "C6EFCE", "FAIL": "FFC7CE", "SKIP": "FFEB9C"}
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Login Test Cases"
+
+    headers = ["#", "Test ID", "Category", "Description",
+               "Expected Result", "Actual Result", "Status", "Last Run"]
+    ws.append(headers)
+
+    hdr_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+    for c in range(1, len(headers) + 1):
+        cell = ws.cell(1, c)
+        cell.fill = hdr_fill
+        cell.font = Font(bold=True, color="FFFFFF", size=11)
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+
+    for i, t in enumerate(tests, 1):
+        fn      = t["fn"]
+        status  = last_results.get(fn, "")
+        exp_res = EXPECTED_RESULTS.get(fn, t["doc"])
+        act_res = status   # PASS / FAIL / SKIP — will be enriched by future runs
+
+        ws.append([i, fn, t["category"], t["doc"],
+                   exp_res, act_res, status, run_ts if status else ""])
+
+        # Colour Status and Actual Result cells
+        if status in STATUS_COLOUR:
+            col = STATUS_COLOUR[status]
+            fill = PatternFill(start_color=col, end_color=col, fill_type="solid")
+            ws.cell(ws.max_row, 6).fill = fill
+            ws.cell(ws.max_row, 7).fill = fill
+            ws.cell(ws.max_row, 6).font = Font(bold=True)
+            ws.cell(ws.max_row, 7).font = Font(bold=True)
+
+        for c in range(1, len(headers) + 1):
+            ws.cell(ws.max_row, c).alignment = Alignment(vertical="top", wrap_text=True)
+
+    for i, w in enumerate([4, 45, 22, 50, 55, 12, 10, 18], 1):
+        ws.column_dimensions[get_column_letter(i)].width = w
+
     os.makedirs(os.path.dirname(EXCEL_FILE), exist_ok=True)
-    d.export_to_excel(test_cases, EXCEL_FILE)
-    print(f"Updated → {EXCEL_FILE}  ({len(test_cases)} rows)")
+    wb.save(EXCEL_FILE)
+
+    passed  = sum(1 for v in last_results.values() if v == "PASS")
+    failed  = sum(1 for v in last_results.values() if v == "FAIL")
+    skipped = sum(1 for v in last_results.values() if v == "SKIP")
+    print(f"Updated  → {EXCEL_FILE}")
+    print(f"Tests    : {len(tests)} rows")
+    print(f"Last run : {run_ts}  |  PASS={passed}  FAIL={failed}  SKIP={skipped}")
 
 CONFIG_FILE = "test_generation_scripts/modules_config.json"
 

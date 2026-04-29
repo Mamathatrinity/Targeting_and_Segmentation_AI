@@ -196,6 +196,55 @@ def ai_test_framework(planner_agent, designer_agent, validator_agent, ui_extract
 
 
 # ============================================
+# Test Result Tracking → Excel sync
+# ============================================
+
+_run_results: dict = {}   # {func_name: "PASS" | "FAIL" | "SKIP"}
+
+
+def pytest_runtest_logreport(report):
+    """Collect pass/fail/skip for every test after its call phase."""
+    if report.when != "call":
+        return
+    func_name = report.nodeid.split("::")[-1]
+    if report.passed:
+        _run_results[func_name] = "PASS"
+    elif report.failed:
+        _run_results[func_name] = "FAIL"
+    elif report.skipped:
+        _run_results[func_name] = "SKIP"
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """After the full run: write results file then regenerate Excel."""
+    if not _run_results:
+        return
+
+    results_file = os.path.join(os.path.dirname(__file__), ".pytest_results.txt")
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M")
+    with open(results_file, "w") as f:
+        f.write(f"__timestamp__|{ts}\n")
+        for name, status in _run_results.items():
+            f.write(f"{name}|{status}\n")
+
+    # Auto-rebuild Excel with latest results
+    try:
+        import subprocess
+        env = os.environ.copy()
+        env["PYTHONPATH"] = os.path.dirname(__file__)
+        subprocess.run(
+            [sys.executable,
+             os.path.join(os.path.dirname(__file__),
+                          "test_generation_scripts", "generate_all_login_tests.py"),
+             "--rebuild"],
+            check=False, env=env,
+        )
+        print(f"\n[Excel] Updated → Testcases/all_login_test_cases_COMPLETE.xlsx")
+    except Exception as e:
+        print(f"\n[Excel] Could not auto-update: {e}")
+
+
+# ============================================
 # Screenshot on Failure
 # ============================================
 
