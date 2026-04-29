@@ -205,12 +205,8 @@ class TestLoginEdgeCases:
             pytest.skip("MFA not approved — approve on your phone and re-run")
         authenticated_page.go_back()
         authenticated_page.wait_for_timeout(1500)
-        page.go_back()
-        page.wait_for_timeout(1500)
-        # After going back the app should either stay authenticated or redirect to login
-        # It should NOT land on a raw microsoftonline.com page (security check)
         from urllib.parse import urlparse
-        host = urlparse(page.url).netloc.lower()
+        host = urlparse(authenticated_page.url).netloc.lower()
         assert "trinitylifesciences.com" in host or "microsoftonline.com" in host, \
             "Browser back should not expose unrelated pages"
 
@@ -353,11 +349,9 @@ class TestLoginSession:
         login = LoginPage(authenticated_page)
         if not login.is_logged_in():
             pytest.skip("MFA not approved — approve on your phone and re-run")
-        # Wait for SPA to settle after login redirect
-        page.wait_for_load_state("domcontentloaded", timeout=30000)
-        assert BASE_URL in page.url, "Should be on the application after login"
-        # Verify HCP-specific content is accessible
-        hcp_indicator = page.locator("text=HCP, text=Specialty, text=Segmentation").first
+        authenticated_page.wait_for_load_state("domcontentloaded", timeout=30000)
+        assert BASE_URL in authenticated_page.url, "Should be on the application after login"
+        hcp_indicator = authenticated_page.locator("text=HCP, text=Specialty, text=Segmentation").first
         try:
             hcp_indicator.wait_for(state="visible", timeout=10000)
             assert True, "HCP module content is accessible"
@@ -412,18 +406,16 @@ class TestLoginSession:
         login = LoginPage(authenticated_page)
         if not login.is_logged_in():
             pytest.skip("MFA not approved — approve on your phone and re-run")
-        # Attempt logout
         try:
-            logout_btn = page.locator("text=Logout, text=Sign Out, [aria-label*='logout'], [aria-label*='sign out']").first
+            logout_btn = authenticated_page.locator("text=Logout, text=Sign Out, [aria-label*='logout'], [aria-label*='sign out']").first
             logout_btn.wait_for(state="visible", timeout=8000)
             logout_btn.click()
-            page.wait_for_timeout(2000)
+            authenticated_page.wait_for_timeout(2000)
         except Exception:
             pytest.skip("Logout button not found — check selector for this app")
-        # After logout, protected pages should redirect
-        page.goto(f"{BASE_URL}/segmentation", wait_until="domcontentloaded")
-        page.wait_for_timeout(2000)
-        url = page.url.lower()
+        authenticated_page.goto(f"{BASE_URL}/segmentation", wait_until="domcontentloaded")
+        authenticated_page.wait_for_timeout(2000)
+        url = authenticated_page.url.lower()
         assert "microsoftonline.com" in url or "/login" in url, \
             "After logout, protected route should redirect to login"
 
