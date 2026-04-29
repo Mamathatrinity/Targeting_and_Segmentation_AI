@@ -1,11 +1,35 @@
 """
 YAML Prompt Loader
 Loads and parses YAML prompt files
-Based on PDF recommendations (Page 271-272)
 """
 import yaml
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Optional
+
+
+def load_yaml_config(file_path: str) -> dict:
+    """
+    Load any YAML config file safely. Returns empty dict on error.
+    Used by: executor.py, designer.py, planner.py
+    """
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            return yaml.safe_load(f) or {}
+    except Exception:
+        return {}
+
+
+def match_module(test_name: str, config: dict) -> Optional[dict]:
+    """
+    Return the first module config whose patterns match the test name.
+    Used by: executor.py (_inject_config_steps), designer.py (match_queries_for_test)
+    """
+    test_lower = test_name.lower()
+    for module_cfg in config.get("modules", {}).values():
+        for pattern in module_cfg.get("patterns", []):
+            if pattern.lower() in test_lower:
+                return module_cfg
+    return None
 
 
 def load_prompt(file_path: str) -> Dict[str, Any]:

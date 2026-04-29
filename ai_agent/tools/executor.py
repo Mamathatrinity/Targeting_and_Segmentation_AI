@@ -20,27 +20,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+from ai_agent.utils.prompt_loader import load_yaml_config, match_module
+
 # Config file paths
 _CONFIG_DIR         = os.path.join(os.path.dirname(__file__), '..', 'config')
 _API_ENDPOINTS_FILE = os.path.join(_CONFIG_DIR, 'api_endpoints.yaml')
 _DB_QUERIES_FILE    = os.path.join(_CONFIG_DIR, 'db_queries.yaml')
-
-
-def _load_config(filepath: str) -> dict:
-    try:
-        with open(filepath, "r") as f:
-            return yaml.safe_load(f) or {}
-    except Exception:
-        return {}
-
-
-def _match_module(test_name: str, config: dict) -> dict | None:
-    test_lower = test_name.lower()
-    for module_cfg in config.get("modules", {}).values():
-        for pattern in module_cfg.get("patterns", []):
-            if pattern.lower() in test_lower:
-                return module_cfg
-    return None
 
 
 def _db_connect():
@@ -179,8 +164,8 @@ class TestExecutor:
 
         # ── API endpoints ────────────────────────────────────────────────
         if depth in ("medium", "deep"):
-            api_cfg = _load_config(_API_ENDPOINTS_FILE)
-            module  = _match_module(test_name, api_cfg)
+            api_cfg = load_yaml_config(_API_ENDPOINTS_FILE)
+            module  = match_module(test_name, api_cfg)
             if module:
                 for ep in module.get("endpoints", []):
                     if ep.get("endpoint", "") not in existing_endpoints:
@@ -197,8 +182,8 @@ class TestExecutor:
 
         # ── DB queries ───────────────────────────────────────────────────
         if depth == "deep":
-            db_cfg = _load_config(_DB_QUERIES_FILE)
-            module = _match_module(test_name, db_cfg)
+            db_cfg = load_yaml_config(_DB_QUERIES_FILE)
+            module = match_module(test_name, db_cfg)
             if module:
                 for q in module.get("queries", []):
                     if q.get("table", "") not in existing_tables:

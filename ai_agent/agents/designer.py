@@ -17,53 +17,9 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from config import AIConfig
 from langfuse_tracker import get_tracker
 from ai_agent.utils.cache import get_cached_response, set_cached_response
-from ai_agent.utils.prompt_loader import load_prompt
+from ai_agent.utils.prompt_loader import load_prompt, load_yaml_config, match_module
 from ai_agent.utils.prompt_formatter import format_prompt
 
-
-def load_db_queries():
-    """Load database validation queries from config file"""
-    queries_file = "ai_agent/config/db_queries.yaml"
-    if os.path.exists(queries_file):
-        with open(queries_file, 'r') as f:
-            return yaml.safe_load(f)
-    return {}
-
-
-def match_queries_for_test(test_name: str, db_queries_config: dict) -> list:
-    """
-    Match queries to test case based on module patterns
-    
-    Args:
-        test_name: Name of test case (e.g., "test_login_valid")
-        db_queries_config: Loaded db_queries.yaml config
-    
-    Returns:
-        List of matching queries for this test
-    """
-    if not db_queries_config or 'modules' not in db_queries_config:
-        return []
-    
-    test_name_lower = test_name.lower()
-    matched_queries = []
-    
-    # Try to match with module patterns
-    for module_name, module_config in db_queries_config.get('modules', {}).items():
-        patterns = module_config.get('patterns', [])
-        
-        # Check if any pattern matches the test name
-        for pattern in patterns:
-            if pattern in test_name_lower:
-                queries = module_config.get('queries', [])
-                matched_queries.extend(queries)
-                break  # Found match for this module, move to next
-    
-    # If no matches, try generic fallback
-    if not matched_queries and 'generic' in db_queries_config.get('modules', {}):
-        generic_module = db_queries_config['modules']['generic']
-        matched_queries.extend(generic_module.get('queries', []))
-    
-    return matched_queries
 
 
 class TestStep(BaseModel):
@@ -246,7 +202,7 @@ class DesignerAgent:
         ws.title = "Test Cases"
         
         # Load DB queries config
-        db_queries = load_db_queries()
+        db_queries_cfg = load_yaml_config("ai_agent/config/db_queries.yaml")
         
         # Header row
         headers = ["Test Case Name", "Description", "Test Steps", "SQL Queries", "Expected Result", "Actual Result", "Layers"]
@@ -332,7 +288,8 @@ class DesignerAgent:
             
             # Build SQL queries text from config (module-based matching)
             sql_queries_text = ""
-            matched_queries = match_queries_for_test(test_name, db_queries)
+            matched_module = match_module(test_name, db_queries_cfg)
+            matched_queries = matched_module.get("queries", []) if matched_module else []
             
             if matched_queries:
                 for idx, query in enumerate(matched_queries, 1):
