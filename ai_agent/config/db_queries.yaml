@@ -1,21 +1,30 @@
 # Database Validation Queries
-# Based on ACTUAL schema of: mysql_hcp_targetandsegmentation_dev
+# Based on ACTUAL schema: mysql_hcp_targetandsegmentation_dev
 #
-# Real tables (confirmed):
-#   auth_user            – id, password, last_login, username, email, is_active, date_joined
+# ── How variables are resolved ────────────────────────────────────────────
+#   {email}    → os.getenv("USER_EMAIL")          defined in: .env
+#   {username} → os.getenv("USER_EMAIL")          defined in: .env
+#   All substitution logic → ai_agent/tools/executor.py → _execute_db_step()
+#   Module pattern matching → ai_agent/tools/executor.py → _match_module()
+#
+# ── Real tables (confirmed via DESCRIBE on dev DB) ────────────────────────
+#   auth_user            – id, password, last_login, username, email,
+#                          is_active, is_staff, date_joined
 #   django_session       – session_key, session_data, expire_date
-#   segments             – id, name, description, filters, target_hcp_count, created_by, created_at, updated_at, type
-#   targets              – id, name, description, target_hcp_count, created_by, created_at, updated_at, deleted_at
+#   segments             – id, name, filters, target_hcp_count, created_by, created_at
+#   targets              – id, name, target_hcp_count, created_by, created_at, deleted_at
 #   segment_target_mapping – id, segment_id, target_id, created_at
 #
-# Only add queries for modules that are implemented and tested.
-# Use {email}, {username} etc. as runtime-replaced variables.
-# All queries are SELECT-only.
+# ── Rules ────────────────────────────────────────────────────────────────
+#   - SELECT-only queries (no INSERT / UPDATE / DELETE)
+#   - Only add a module here once it is implemented and tested
+#   - Queries must be idempotent (safe to run multiple times)
 
 modules:
 
-  # ── Login / Authentication ────────────────────────────────────────────────
-  # Table: auth_user, django_session
+  # ── Login / Authentication ────────────────────────────────────────────
+  # Matched when test name contains any of the patterns below
+  # Variables: {email} → USER_EMAIL from .env
   login:
     patterns: ["login", "auth", "signin", "authentication", "session"]
     queries:
@@ -27,16 +36,16 @@ modules:
         condition: "= 1"
         expected: "auth_user.is_active = 1 for the logged-in user"
         description: "Verify user account is active in auth_user table"
-        variables: ["email"]
+        variables: ["email"]   # → USER_EMAIL (.env) → executor.py _execute_db_step()
 
       - name: "verify_last_login_updated"
         table: "auth_user"
         column: "last_login"
         sql: "SELECT last_login FROM auth_user WHERE email = '{email}' LIMIT 1"
         condition: "IS NOT NULL"
-        expected: "auth_user.last_login is not null after login"
+        expected: "auth_user.last_login is not null after successful login"
         description: "Verify last_login timestamp was updated on successful login"
-        variables: ["email"]
+        variables: ["email"]   # → USER_EMAIL (.env) → executor.py _execute_db_step()
 
       - name: "verify_session_exists"
         table: "django_session"
@@ -44,10 +53,10 @@ modules:
         sql: "SELECT COUNT(*) FROM django_session WHERE expire_date > NOW()"
         condition: "> 0"
         expected: "At least 1 active session exists in django_session"
-        description: "Verify a valid non-expired session exists after login"
-        variables: []
+        description: "Verify a valid non-expired Django session exists after login"
+        variables: []   # no runtime variable needed
 
-# ── Future modules (add here when implemented) ─────────────────────────────
+# ── Future modules — add here when implemented ────────────────────────────
 # segments:
 #   patterns: ["segment", "cohort"]
 #   queries:
