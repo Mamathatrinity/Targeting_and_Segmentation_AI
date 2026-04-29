@@ -3,7 +3,7 @@ Executor Tool (NO AI)
 Executes test steps using MCP Client + API + DB validation
 
 Supported step layers:
-  UI  → navigate, fill, click, verify_text, assert_visible, assert_url
+  UI  → navigate, fill, click, verify_text
   API → verify_api, verify_api_field
   DB  → verify_db
 """
@@ -20,29 +20,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# ── DB connection config from .env ─────────────────────────────────────────
-_DB_CONFIG = {
-    "host":     os.getenv("DB_SERVER", ""),
-    "port":     int(os.getenv("DB_PORT", 3306)),
-    "user":     os.getenv("DB_USER", ""),
-    "password": os.getenv("DB_PASSWORD", ""),
-    "database": os.getenv("DB_NAME", ""),
-    "ssl_disabled": False,          # Azure MySQL requires SSL
-    "connect_timeout": 10,
-}
-
-# ── API config from .env ────────────────────────────────────────────────────
-_API_BASE_URL = os.getenv("BASE_URL", "").rstrip("/")
-_API_TOKEN    = os.getenv("API_TOKEN", "")    # optional bearer token
-
-# ── Config file paths ────────────────────────────────────────────────────────
-_CONFIG_DIR        = os.path.join(os.path.dirname(__file__), '..', 'config')
+# Config file paths
+_CONFIG_DIR         = os.path.join(os.path.dirname(__file__), '..', 'config')
 _API_ENDPOINTS_FILE = os.path.join(_CONFIG_DIR, 'api_endpoints.yaml')
 _DB_QUERIES_FILE    = os.path.join(_CONFIG_DIR, 'db_queries.yaml')
 
 
 def _load_config(filepath: str) -> dict:
-    """Load a YAML config file, return empty dict on error."""
     try:
         with open(filepath, "r") as f:
             return yaml.safe_load(f) or {}
@@ -51,13 +35,31 @@ def _load_config(filepath: str) -> dict:
 
 
 def _match_module(test_name: str, config: dict) -> dict | None:
-    """Return the first module whose patterns match the test name."""
     test_lower = test_name.lower()
     for module_cfg in config.get("modules", {}).values():
         for pattern in module_cfg.get("patterns", []):
             if pattern.lower() in test_lower:
                 return module_cfg
     return None
+
+
+def _db_connect():
+    """Open a pymysql connection using DB_* vars from .env"""
+    import pymysql
+    return pymysql.connect(
+        host=os.getenv("DB_SERVER"),
+        port=int(os.getenv("DB_PORT", 3306)),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        database=os.getenv("DB_NAME"),
+        connect_timeout=10,
+    )
+
+
+def _api_headers() -> dict:
+    """Build request headers using API_TOKEN from .env (optional)"""
+    token = os.getenv("API_TOKEN", "")
+    return {"Authorization": f"Bearer {token}"} if token else {}
 
 
 class TestExecutor:
@@ -230,10 +232,9 @@ class TestExecutor:
         expected_value = step.get("expected_value")
         description    = step.get("expected", endpoint)
 
-        url = endpoint if endpoint.startswith("http") else f"{_API_BASE_URL}{endpoint}"
-        headers = {}
-        if _API_TOKEN:
-            headers["Authorization"] = f"Bearer {_API_TOKEN}"
+        base_url = os.getenv("BASE_URL", "").rstrip("/")
+        url = endpoint if endpoint.startswith("http") else f"{base_url}{endpoint}"
+        headers = _api_headers()
 
         print(f"    🌐 API {method} {url}")
         try:
@@ -311,7 +312,7 @@ class TestExecutor:
         print(f"    🗄️  DB query: {sql}")
         try:
             import pymysql
-            conn = pymysql.connect(**_DB_CONFIG)
+            conn = _db_connect()
             try:
                 with conn.cursor() as cur:
                     cur.execute(sql)
