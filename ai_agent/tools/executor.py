@@ -35,6 +35,30 @@ _DB_CONFIG = {
 _API_BASE_URL = os.getenv("BASE_URL", "").rstrip("/")
 _API_TOKEN    = os.getenv("API_TOKEN", "")    # optional bearer token
 
+# ── Config file paths ────────────────────────────────────────────────────────
+_CONFIG_DIR        = os.path.join(os.path.dirname(__file__), '..', 'config')
+_API_ENDPOINTS_FILE = os.path.join(_CONFIG_DIR, 'api_endpoints.yaml')
+_DB_QUERIES_FILE    = os.path.join(_CONFIG_DIR, 'db_queries.yaml')
+
+
+def _load_config(filepath: str) -> dict:
+    """Load a YAML config file, return empty dict on error."""
+    try:
+        with open(filepath, "r") as f:
+            return yaml.safe_load(f) or {}
+    except Exception:
+        return {}
+
+
+def _match_module(test_name: str, config: dict) -> dict | None:
+    """Return the first module whose patterns match the test name."""
+    test_lower = test_name.lower()
+    for module_cfg in config.get("modules", {}).values():
+        for pattern in module_cfg.get("patterns", []):
+            if pattern.lower() in test_lower:
+                return module_cfg
+    return None
+
 
 class TestExecutor:
     """Executes generated tests via MCP Server (deterministic, no AI)"""
@@ -73,7 +97,7 @@ class TestExecutor:
     def _execute_single_test(self, test_case: dict, base_url: str) -> dict:
         """Execute a single test case via MCP"""
         test_name = test_case.get("name", "unknown_test")
-        steps = test_case.get("steps", [])
+        steps = self._inject_config_steps(test_case)  # merge config-driven API/DB steps
         
         result = {
             "test_name": test_name,
@@ -139,6 +163,54 @@ class TestExecutor:
     
 
     
+    def _inject_config_steps(self, test_case: dict) -> list:
+        """
+        Augment the test's steps with any extra API/DB steps defined in
+        api_endpoints.yaml and db_queries.yaml for the matching module.
+        Only appended if the step is not already explicitly listed.
+        """
+        test_name   = test_case.get("name", "")
+        depth       = test_case.get("depth", "medium")
+        steps       = list(test_case.get("steps", []))
+        existing_endpoints = {s.get("endpoint", "") for s in steps}
+        existing_tables    = {s.get("table", "") for s in steps}
+
+        # ── API endpoints ────────────────────────────────────────────────
+        if depth in ("medium", "deep"):
+            api_cfg = _load_config(_API_ENDPOINTS_FILE)
+            module  = _match_module(test_name, api_cfg)
+            if module:
+                for ep in module.get("endpoints", []):
+                    if ep.get("endpoint", "") not in existing_endpoints:
+                        steps.append({
+                            "action":          "verify_api",
+                            "endpoint":        ep["endpoint"],
+                            "method":          ep.get("method", "GET"),
+                            "expected_status": ep.get("expected_status", 200),
+                            "field":           ep.get("field", ""),
+                            "expected_value":  ep.get("expected_value"),
+                            "expected":        ep.get("description", ep["endpoint"]),
+                            "layer":           "API",
+                        })
+
+        # ── DB queries ───────────────────────────────────────────────────
+        if depth == "deep":
+            db_cfg = _load_config(_DB_QUERIES_FILE)
+            module = _match_module(test_name, db_cfg)
+            if module:
+                for q in module.get("queries", []):
+                    if q.get("table", "") not in existing_tables:
+                        steps.append({
+                            "action":   "verify_db",
+                            "table":    q.get("table", ""),
+                            "column":   q.get("column", ""),
+                            "query":    q.get("sql", ""),
+                            "expected": q.get("description", q.get("name", "")),
+                            "layer":    "DB",
+                        })
+
+        return steps
+
     def _execute_api_step(self, step: dict, result: dict):
         """
         Execute an API verification step.

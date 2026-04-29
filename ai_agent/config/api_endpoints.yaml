@@ -1,0 +1,63 @@
+# API Endpoint Validation Config — Login Module
+# Only add modules here once they are implemented and tested.
+# Mirrors the structure of db_queries.yaml.
+#
+# Fields per endpoint:
+#   name            – unique identifier for logging
+#   endpoint        – path (e.g. /api/auth/session) — appended to BASE_URL
+#   method          – GET (default) | POST | PUT | DELETE
+#   expected_status – expected HTTP status code
+#   field           – dot-notation JSON field to assert (optional)
+#   expected_value  – expected value for that field (optional)
+#   description     – human-readable explanation
+
+modules:
+
+  # ── Login / Authentication ────────────────────────────────────────────────
+  # Patterns matched against test name (case-insensitive substring match)
+  login:
+    patterns: ["login", "auth", "signin", "authentication", "session"]
+    endpoints:
+
+      - name: "verify_session_active"
+        endpoint: "/api/auth/session"
+        method: GET
+        expected_status: 200
+        description: "After login, session API returns 200 with valid token"
+
+      - name: "verify_session_user_id"
+        endpoint: "/api/auth/session"
+        method: GET
+        expected_status: 200
+        field: "user_id"
+        expected_value: null          # null = just check field exists (non-empty)
+        description: "Session response contains a user_id"
+
+      - name: "verify_session_email"
+        endpoint: "/api/auth/session"
+        method: GET
+        expected_status: 200
+        field: "user.email"
+        expected_value: "{email}"     # {email} replaced at runtime with VALID_EMAIL
+        description: "Session response contains correct user email"
+
+      - name: "verify_login_endpoint_rejects_bad_creds"
+        endpoint: "/api/auth/login"
+        method: POST
+        expected_status: 401
+        description: "Login API returns 401 for invalid credentials (negative tests)"
+
+      - name: "verify_hcp_specialties_accessible_post_login"
+        endpoint: "/api/hcp/specialties"
+        method: GET
+        expected_status: 200
+        description: "After login, HCP specialties API is accessible (auth guard works)"
+
+# ── Future modules (add here when implemented) ─────────────────────────────
+# search:
+#   patterns: [...]
+#   endpoints: [...]
+#
+# segments:
+#   patterns: [...]
+#   endpoints: [...]
