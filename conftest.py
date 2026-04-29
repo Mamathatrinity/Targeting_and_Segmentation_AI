@@ -60,7 +60,7 @@ def browser(playwright_instance):
     """Launch browser for the session."""
     browser = playwright_instance.chromium.launch(
         headless=False,
-        slow_mo=600,   # Slowed down so you can see every action clearly
+        slow_mo=100,   # 100ms: actions are visible but not artificially slow
         args=["--no-sandbox", "--disable-gpu", "--incognito", "--start-maximized"]
     )
     yield browser
@@ -208,26 +208,32 @@ def pytest_runtest_makereport(item, call):
 
 
 @pytest.fixture(autouse=True)
-def screenshot_on_failure(request, page):
+def screenshot_on_failure(request):
     """Automatically take screenshot on test failure."""
     yield
-    
-    test_name = request.node.name
-    
-    if hasattr(request.node, "rep_call") and request.node.rep_call.failed:
-        # Test failed - take screenshot
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        screenshot_dir = "screenshots"
-        os.makedirs(screenshot_dir, exist_ok=True)
-        screenshot_path = os.path.join(screenshot_dir, f"{test_name}_{timestamp}.png")
-        
+
+    if not (hasattr(request.node, "rep_call") and request.node.rep_call.failed):
+        print(f"[PASS] Test {request.node.name} PASSED")
+        return
+
+    # Try to get the page fixture — only tests that use it will have it
+    try:
+        pg = request.getfixturevalue("page")
+    except pytest.FixtureLookupError:
         try:
-            page.screenshot(path=screenshot_path, full_page=True)
-            print(f"[SCREENSHOT] Saved: {screenshot_path}")
-        except Exception as e:
-            print(f"[ERROR] Failed to take screenshot: {e}")
-    else:
-        print(f"[PASS] Test {test_name} PASSED")
+            pg = request.getfixturevalue("authenticated_page")
+        except pytest.FixtureLookupError:
+            return  # No page fixture — skip screenshot
+
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    screenshot_dir = "screenshots"
+    os.makedirs(screenshot_dir, exist_ok=True)
+    screenshot_path = os.path.join(screenshot_dir, f"{request.node.name}_{timestamp}.png")
+    try:
+        pg.screenshot(path=screenshot_path, full_page=True)
+        print(f"[SCREENSHOT] Saved: {screenshot_path}")
+    except Exception as e:
+        print(f"[ERROR] Failed to take screenshot: {e}")
 
 
 # ============================================

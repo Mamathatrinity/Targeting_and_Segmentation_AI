@@ -63,12 +63,13 @@ class LoginPage:
         else:
             # Normal mode: Wait for MFA approval then 'Stay signed in?' prompt.
             # Azure AD sometimes skips the prompt if MFA session is cached — handle both paths.
+            # Timeout is 60s (not 120s) so Playwright raises before pytest thread-timeout fires.
             try:
-                self.page.get_by_text("Stay signed in?").wait_for(state="visible", timeout=120000)
+                self.page.get_by_text("Stay signed in?").wait_for(state="visible", timeout=60000)
                 with self.page.expect_navigation(wait_until="commit", timeout=25000):
                     self.page.get_by_role("button", name="Yes").click()
             except Exception:
-                # Prompt didn't appear — either already redirected to app or MFA skipped
+                # Prompt didn't appear — either already redirected to app or MFA not yet approved
                 pass
         
         # Small pause for SPA client-side redirects to settle (code → # → / → /universe-summary)
