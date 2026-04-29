@@ -31,7 +31,7 @@ except ImportError:
     except ImportError:
         FAISS_AVAILABLE = False
 
-from langchain.schema import Document
+from langchain_core.documents import Document
 
 
 # ---------------------------------------------------------------------------
