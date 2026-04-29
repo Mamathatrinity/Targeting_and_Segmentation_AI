@@ -1,147 +1,71 @@
-# Database Validation Queries - Module-Based Configuration
-# Queries are organized by module type and auto-matched to test cases
-# Use variables {email}, {search_term}, {name} etc. for dynamic values
+# Database Validation Queries
+# Based on ACTUAL schema of: mysql_hcp_targetandsegmentation_dev
+#
+# Real tables (confirmed):
+#   auth_user            – id, password, last_login, username, email, is_active, date_joined
+#   django_session       – session_key, session_data, expire_date
+#   segments             – id, name, description, filters, target_hcp_count, created_by, created_at, updated_at, type
+#   targets              – id, name, description, target_hcp_count, created_by, created_at, updated_at, deleted_at
+#   segment_target_mapping – id, segment_id, target_id, created_at
+#
+# Only add queries for modules that are implemented and tested.
+# Use {email}, {username} etc. as runtime-replaced variables.
+# All queries are SELECT-only.
 
-# Module: Authentication & Login
-# Matches: Any test with "login" or "auth" in the name
 modules:
+
+  # ── Login / Authentication ────────────────────────────────────────────────
+  # Table: auth_user, django_session
   login:
-    patterns: ["login", "auth", "signin", "authentication"]
+    patterns: ["login", "auth", "signin", "authentication", "session"]
     queries:
+
+      - name: "verify_user_exists_and_active"
+        table: "auth_user"
+        column: "is_active"
+        sql: "SELECT is_active FROM auth_user WHERE email = '{email}' LIMIT 1"
+        condition: "= 1"
+        expected: "auth_user.is_active = 1 for the logged-in user"
+        description: "Verify user account is active in auth_user table"
+        variables: ["email"]
+
       - name: "verify_last_login_updated"
-        sql: "SELECT last_login FROM users WHERE email = '{email}' AND last_login IS NOT NULL"
-        expected: "Returns 1 row with recent timestamp"
-        description: "Verify user's last_login timestamp updated"
+        table: "auth_user"
+        column: "last_login"
+        sql: "SELECT last_login FROM auth_user WHERE email = '{email}' LIMIT 1"
+        condition: "IS NOT NULL"
+        expected: "auth_user.last_login is not null after login"
+        description: "Verify last_login timestamp was updated on successful login"
         variables: ["email"]
-      
-      - name: "verify_login_count_incremented"
-        sql: "SELECT login_count FROM users WHERE email = '{email}' AND login_count > 0"
-        expected: "Returns 1 row with count > 0"
-        description: "Verify login counter incremented"
-        variables: ["email"]
-      
-      - name: "verify_session_created"
-        sql: "SELECT * FROM user_sessions WHERE user_id = (SELECT id FROM users WHERE email = '{email}') AND active = 1 ORDER BY created_at DESC LIMIT 1"
-        expected: "Returns 1 active session"
-        description: "Verify active session exists for user"
-        variables: ["email"]
-  
-  # Module: Search & Filtering
-  # Matches: Any test with "search" or "filter" in the name
-  search:
-    patterns: ["search", "filter", "find", "query"]
-    queries:
-      - name: "verify_search_results_exist"
-        sql: "SELECT COUNT(*) as count FROM hcp_profiles WHERE name LIKE '%{search_term}%'"
-        expected: "Returns count > 0"
-        description: "Verify database has matching records"
-        variables: ["search_term"]
-      
-      - name: "verify_search_logged"
-        sql: "SELECT * FROM search_logs WHERE search_term = '{search_term}' ORDER BY created_at DESC LIMIT 1"
-        expected: "Returns 1 recent search log"
-        description: "Verify search activity logged for analytics"
-        variables: ["search_term"]
-      
-      - name: "verify_filter_results"
-        sql: "SELECT COUNT(*) as count FROM hcp_profiles WHERE specialty = '{specialty}' AND state = '{state}'"
-        expected: "Returns count > 0"
-        description: "Verify filtered results match criteria"
-        variables: ["specialty", "state"]
-  
-  # Module: Segments
-  # Matches: Any test with "segment" in the name
-  segments:
-    patterns: ["segment", "cohort", "group"]
-    queries:
-      - name: "verify_segment_created"
-        sql: "SELECT * FROM segments WHERE name = '{segment_name}' ORDER BY created_at DESC LIMIT 1"
-        expected: "Returns 1 row with new segment"
-        description: "Verify segment created in database"
-        variables: ["segment_name"]
-      
-      - name: "verify_segment_hcp_count"
-        sql: "SELECT hcp_count FROM segments WHERE name = '{segment_name}' AND hcp_count > 0"
-        expected: "Returns count > 0"
-        description: "Verify segment has HCPs assigned"
-        variables: ["segment_name"]
-      
-      - name: "verify_segment_filters"
-        sql: "SELECT filters FROM segments WHERE name = '{segment_name}'"
-        expected: "Returns JSON with filter criteria"
-        description: "Verify segment filters saved correctly"
-        variables: ["segment_name"]
-  
-  # Module: User Registration
-  # Matches: Any test with "register" or "signup" in the name
-  registration:
-    patterns: ["register", "signup", "create_user", "create_account"]
-    queries:
-      - name: "verify_user_created"
-        sql: "SELECT * FROM users WHERE email = '{email}' AND status = 'active'"
-        expected: "Returns 1 row"
-        description: "Verify new user record exists"
-        variables: ["email"]
-      
-      - name: "verify_user_profile_created"
-        sql: "SELECT * FROM user_profiles WHERE user_id = (SELECT id FROM users WHERE email = '{email}')"
-        expected: "Returns 1 row"
-        description: "Verify user profile initialized"
-        variables: ["email"]
-      
-      - name: "verify_welcome_email_queued"
-        sql: "SELECT * FROM email_queue WHERE recipient = '{email}' AND template = 'welcome' ORDER BY created_at DESC LIMIT 1"
-        expected: "Returns 1 row"
-        description: "Verify welcome email queued"
-        variables: ["email"]
-  
-  # Module: Data Export
-  # Matches: Any test with "export" or "download" in the name
-  export:
-    patterns: ["export", "download", "csv", "excel"]
-    queries:
-      - name: "verify_export_logged"
-        sql: "SELECT * FROM export_logs WHERE user_id IS NOT NULL AND export_type = '{export_type}' ORDER BY created_at DESC LIMIT 1"
-        expected: "Returns 1 row"
-        description: "Verify export action logged for compliance"
-        variables: ["export_type"]
-      
-      - name: "verify_export_record_count"
-        sql: "SELECT record_count FROM export_logs ORDER BY created_at DESC LIMIT 1"
-        expected: "Returns count > 0"
-        description: "Verify export contains data"
+
+      - name: "verify_session_exists"
+        table: "django_session"
+        column: "session_key"
+        sql: "SELECT COUNT(*) FROM django_session WHERE expire_date > NOW()"
+        condition: "> 0"
+        expected: "At least 1 active session exists in django_session"
+        description: "Verify a valid non-expired session exists after login"
         variables: []
-  
-  # Module: Security
-  # Matches: Any test with "security" or "injection" in the name
-  security:
-    patterns: ["security", "injection", "xss", "sql_injection", "attack"]
-    queries:
-      - name: "verify_security_event_logged"
-        sql: "SELECT * FROM security_logs WHERE event_type = '{event_type}' ORDER BY created_at DESC LIMIT 1"
-        expected: "Returns 1 row"
-        description: "Verify security event logged"
-        variables: ["event_type"]
-      
-      - name: "verify_failed_login_logged"
-        sql: "SELECT * FROM login_attempts WHERE email = '{email}' AND status = 'failed' ORDER BY created_at DESC LIMIT 1"
-        expected: "Returns 1 row"
-        description: "Verify failed login attempt recorded"
-        variables: ["email"]
 
-# Generic/Fallback Queries
-# Applied when no module pattern matches
-generic:
-  patterns: ["*"]  # Matches everything
-  queries:
-    - name: "verify_recent_activity"
-      sql: "SELECT * FROM activity_logs WHERE user_id IS NOT NULL ORDER BY created_at DESC LIMIT 5"
-      expected: "Returns activity records"
-      description: "Verify recent system activity"
-      variables: []
-
-# Notes:
-# - All queries are SELECT-only (no INSERT, UPDATE, DELETE)
-# - Use parameterized queries in executor to prevent SQL injection
-# - Test data should be cleaned up after test execution
-# - Queries should be idempotent (safe to run multiple times)
+# ── Future modules (add here when implemented) ─────────────────────────────
+# segments:
+#   patterns: ["segment", "cohort"]
+#   queries:
+#     - name: "verify_segment_exists"
+#       table: "segments"
+#       column: "id"
+#       sql: "SELECT id FROM segments WHERE name = '{segment_name}' LIMIT 1"
+#       condition: "IS NOT NULL"
+#       description: "Verify segment was created in DB"
+#       variables: ["segment_name"]
+#
+# targets:
+#   patterns: ["target"]
+#   queries:
+#     - name: "verify_target_exists"
+#       table: "targets"
+#       column: "id"
+#       sql: "SELECT id FROM targets WHERE name = '{target_name}' AND deleted_at IS NULL LIMIT 1"
+#       condition: "IS NOT NULL"
+#       description: "Verify target list exists and is not deleted"
+#       variables: ["target_name"]
