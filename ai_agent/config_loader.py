@@ -2,9 +2,9 @@
 Configuration Loader
 Loads and validates YAML configuration files
 """
-import yaml
 import os
 from typing import Dict, List, Optional
+from ai_agent.utils.prompt_loader import load_yaml_config
 
 
 class ConfigLoader:
@@ -21,14 +21,12 @@ class ConfigLoader:
             print("Using default single-module configuration")
             return self._get_default_config()
         
-        try:
-            with open(self.config_path, 'r') as f:
-                config = yaml.safe_load(f)
-                print(f"✓ Loaded config from: {self.config_path}")
-                return config
-        except yaml.YAMLError as e:
-            print(f"❌ Error parsing YAML config: {e}")
-            return self._get_default_config()
+        config = load_yaml_config(self.config_path)
+        if config:
+            print(f"✓ Loaded config from: {self.config_path}")
+            return config
+        print(f"❌ Error parsing YAML config: {self.config_path}")
+        return self._get_default_config()
     
     def _get_default_config(self) -> Dict:
         """Return default configuration"""

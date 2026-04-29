@@ -3,7 +3,6 @@ Multi-Module Test Execution Runner
 Runs AI testing across all HCP modules in one automated flow
 Based on PDF recommendations (Page 282-283)
 """
-import yaml
 import json
 from pathlib import Path
 from typing import List, Dict, Any
@@ -20,7 +19,7 @@ from ai_agent.tools.ui_extractor import extract_ui_data
 from ai_agent.tools.executor import execute_tests
 
 # Import utils
-from ai_agent.utils.prompt_loader import load_module_contexts
+from ai_agent.utils.prompt_loader import load_module_contexts, load_yaml_config
 from ai_agent.utils.cache import get_cache_stats, clear_cache
 from ai_agent.langfuse_tracker import tracker
 
@@ -87,9 +86,8 @@ class MultiModuleRunner:
                 }
             ]
         
-        with open(config_file, 'r') as f:
-            config = yaml.safe_load(f)
-        
+        config = load_yaml_config(str(config_file))
+
         if 'modules' in config and isinstance(config['modules'], list):
             return config['modules']
         

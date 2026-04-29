@@ -29,8 +29,6 @@ import sys
 import os
 from typing import Dict, List, Optional
 
-from langchain_openai import AzureChatOpenAI
-
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from ai_agent.config import AIConfig
 from ai_agent.utils.cache import get_cached_response, set_cached_response
@@ -88,15 +86,7 @@ class SelectorHealer:
     HTML_EXCERPT_LIMIT = 4000
 
     def __init__(self):
-        AIConfig.validate()
-        self.llm = AzureChatOpenAI(
-            azure_deployment=AIConfig.AZURE_OPENAI_DEPLOYMENT,
-            openai_api_version=AIConfig.AZURE_OPENAI_API_VERSION,
-            azure_endpoint=AIConfig.AZURE_OPENAI_ENDPOINT,
-            api_key=AIConfig.AZURE_OPENAI_API_KEY,
-            temperature=0.2,    # Low – we want precise selector suggestions
-            max_tokens=500,     # Small response (just JSON)
-        )
+        self.llm = AIConfig.build_llm(500)
 
     # ------------------------------------------------------------------
     def heal(
