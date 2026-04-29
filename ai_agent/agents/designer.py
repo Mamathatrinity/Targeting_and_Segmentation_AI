@@ -2,7 +2,6 @@
 Designer Agent
 Converts test scenarios into executable YAML test steps
 """
-from langchain_openai import AzureChatOpenAI
 from pydantic import BaseModel, Field
 from typing import List, Dict
 import yaml
@@ -41,20 +40,7 @@ class DesignerAgent:
     """Converts scenarios to executable test steps"""
     
     def __init__(self):
-        # Validate configuration
-        AIConfig.validate()
-        
-        # Initialize Azure GPT-4o
-        self.llm = AzureChatOpenAI(
-            azure_deployment=AIConfig.AZURE_OPENAI_DEPLOYMENT,
-            openai_api_version=AIConfig.AZURE_OPENAI_API_VERSION,
-            azure_endpoint=AIConfig.AZURE_OPENAI_ENDPOINT,
-            api_key=AIConfig.AZURE_OPENAI_API_KEY,
-            temperature=AIConfig.TEMPERATURE,
-            max_tokens=AIConfig.MAX_TOKENS_DESIGNER
-        )
-        
-        # Load YAML prompt template
+        self.llm         = AIConfig.build_llm(AIConfig.MAX_TOKENS_DESIGNER)
         self.prompt_data = load_prompt("designer.yaml")
     
     def design_tests(self, scenarios: dict, ui_data: dict, max_tests: int = None) -> List[dict]:

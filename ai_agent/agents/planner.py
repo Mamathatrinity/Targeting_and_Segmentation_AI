@@ -5,7 +5,6 @@ Includes: testing strategy (priority/depth/focus), RAG context for complex
 modules, and scenario generation — all in a single LLM call.
 Backup of the separate files: merged_planner_strategy.py / strategy.py
 """
-from langchain_openai import AzureChatOpenAI
 from langchain_core.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field
 from typing import List, Literal, Optional
@@ -64,27 +63,10 @@ class PlannerAgent:
     """Plans test scenarios from UI data (merged: Strategy + RAG + Planner)"""
     
     def __init__(self):
-        # Validate configuration
-        AIConfig.validate()
-        
-        # Initialize Azure GPT-4o
-        self.llm = AzureChatOpenAI(
-            azure_deployment=AIConfig.AZURE_OPENAI_DEPLOYMENT,
-            openai_api_version=AIConfig.AZURE_OPENAI_API_VERSION,
-            azure_endpoint=AIConfig.AZURE_OPENAI_ENDPOINT,
-            api_key=AIConfig.AZURE_OPENAI_API_KEY,
-            temperature=AIConfig.TEMPERATURE,
-            max_tokens=AIConfig.MAX_TOKENS_PLANNER  # Token limit for cost control
-        )
-        
-        # Output parser for structured JSON
-        self.parser = PydanticOutputParser(pydantic_object=TestScenarios)
-        
-        # Load YAML prompt template
+        self.llm        = AIConfig.build_llm(AIConfig.MAX_TOKENS_PLANNER)
+        self.parser     = PydanticOutputParser(pydantic_object=TestScenarios)
         self.prompt_data = load_prompt("planner.yaml")
-        
-        # RAG store — loaded once per agent instance (not per call)
-        self.rag = get_rag_store()
+        self.rag        = get_rag_store()
     
     def generate_scenarios(self, ui_data: dict) -> dict:
         """
@@ -197,38 +179,19 @@ class PlannerAgent:
             raise ValueError(f"Failed to parse LLM response: {e}")
     
     def _get_module_pattern(self, module_name: str) -> str:
-        """Load matching module pattern from module_patterns.yaml and return as plain text."""
-        import yaml
-        patterns_file = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "config", "module_patterns.yaml"
-        )
-        if not os.path.exists(patterns_file):
+        """Return module pattern context from module_patterns.yaml as plain text."""
+        from ai_agent.utils.prompt_loader import load_yaml_config, match_module
+        patterns_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config", "module_patterns.yaml")
+        data    = load_yaml_config(patterns_file)
+        matched = match_module(module_name, {"modules": data.get("module_patterns", {})})
+        if not matched:
             return ""
-        try:
-            with open(patterns_file, "r") as f:
-                data = yaml.safe_load(f)
-            patterns = data.get("module_patterns", {})
-            # Match module name to a pattern key
-            name_lower = module_name.lower()
-            matched = None
-            for key in patterns:
-                if key in name_lower or name_lower in key:
-                    matched = patterns[key]
-                    break
-            if not matched:
-                return ""
-            # Flatten to plain text for prompt injection
-            lines = [f"Module pattern: {module_name}"]
-            for section, items in matched.items():
-                if section == "type":
-                    continue
-                if isinstance(items, list):
-                    lines.append(f"{section.replace('_', ' ').title()}:")
-                    for item in items:
-                        lines.append(f"  - {item}")
-            return "\n".join(lines)
-        except Exception:
-            return ""
+        lines = [f"Module pattern: {module_name}"]
+        for section, items in matched.items():
+            if section != "type" and isinstance(items, list):
+                lines.append(f"{section.replace('_', ' ').title()}:")
+                lines.extend(f"  - {item}" for item in items)
+        return "\n".join(lines)
 
     def _build_scenario_counts(self) -> str:
         """Build scenario counts table string from DEPTH_CONFIG (no hardcoding in YAML)"""

@@ -4,7 +4,6 @@ Analyzes test results, identifies failure root causes, AND decides which
 tests to rerun, skip, or prioritise — all in a single LLM call.
 Backup of the separate files: ai_agent/agents/backup/decision_engine.py
 """
-from langchain_openai import AzureChatOpenAI
 from typing import Dict, List
 import json
 
@@ -36,20 +35,7 @@ class ValidatorAgent:
     """Analyzes test execution results + decides next actions (merged: Validator + Decision Engine)"""
     
     def __init__(self):
-        # Validate configuration
-        AIConfig.validate()
-        
-        # Initialize Azure GPT-4o
-        self.llm = AzureChatOpenAI(
-            azure_deployment=AIConfig.AZURE_OPENAI_DEPLOYMENT,
-            openai_api_version=AIConfig.AZURE_OPENAI_API_VERSION,
-            azure_endpoint=AIConfig.AZURE_OPENAI_ENDPOINT,
-            api_key=AIConfig.AZURE_OPENAI_API_KEY,
-            temperature=AIConfig.TEMPERATURE,
-            max_tokens=AIConfig.MAX_TOKENS_VALIDATOR  # Small limit - just analysis
-        )
-        
-        # Load YAML prompt template
+        self.llm         = AIConfig.build_llm(AIConfig.MAX_TOKENS_VALIDATOR)
         self.prompt_data = load_prompt("validator.yaml")
     
     def validate_results(self, execution_results: Dict, module_name: str = "general") -> Dict:

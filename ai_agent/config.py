@@ -104,3 +104,17 @@ class AIConfig:
         if not cls.AZURE_OPENAI_ENDPOINT:
             raise ValueError("AZURE_OPENAI_ENDPOINT not set in environment")
         return True
+
+    @classmethod
+    def build_llm(cls, max_tokens: int):
+        """Create AzureChatOpenAI instance — single place for all agents."""
+        from langchain_openai import AzureChatOpenAI
+        cls.validate()
+        return AzureChatOpenAI(
+            azure_deployment=cls.AZURE_OPENAI_DEPLOYMENT,
+            openai_api_version=cls.AZURE_OPENAI_API_VERSION,
+            azure_endpoint=cls.AZURE_OPENAI_ENDPOINT,
+            api_key=cls.AZURE_OPENAI_API_KEY,
+            temperature=cls.TEMPERATURE,
+            max_tokens=max_tokens,
+        )
